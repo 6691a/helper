@@ -1,0 +1,20 @@
+[project]
+name = "helper"
+version = "0.1.0"
+description = "Add your description here"
+requires-python = ">=3.12"
+dependencies = [
+    "aiohttp>=3.11.14",
+    "fastapi>=0.115.11",
+    "langchain-ollama>=0.2.3",
+    "langgraph>=0.3.11",
+    "pydantic-settings>=2.8.1",
+    "uvicorn>=0.34.0",
+]
+
+[dependency-groups]
+dev = [
+    "jupyterlab>=4.3.6",
+    "requests>=2.32.3",
+    "yfinance>=0.2.54",
+]
