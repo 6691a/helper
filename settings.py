@@ -1,0 +1,45 @@
+import os
+from pathlib import Path
+
+from pydantic_settings import (
+    BaseSettings,
+    PydanticBaseSettingsSource,
+    YamlConfigSettingsSource,
+    SettingsConfigDict,
+)
+
+from apps.types.database import Database
+from apps.types.social import SocialConfig
+
+ROOT_DIR = Path(__file__).parent.resolve()
+ENV_FILE = os.getenv("ENV_FILE", "local.yaml")
+
+
+class _Settings(BaseSettings):
+    root_dir: Path = ROOT_DIR
+    secret_key: str
+    database: Database
+    social: SocialConfig
+
+    model_config = SettingsConfigDict(
+        case_sensitive=False,
+        extra="ignore",
+    )
+
+    @classmethod
+    def settings_customise_sources(
+        cls,
+        settings_cls: type[BaseSettings],
+        *args: PydanticBaseSettingsSource,
+        **kwargs: PydanticBaseSettingsSource,
+    ) -> tuple[PydanticBaseSettingsSource, ...]:
+        return (
+            YamlConfigSettingsSource(
+                settings_cls=settings_cls,
+                yaml_file=ROOT_DIR / "env" / ENV_FILE,
+                yaml_file_encoding="utf-8",
+            ),
+        )
+
+
+Settings = _Settings()
