@@ -36,3 +36,19 @@ migrate:
 # 마이그레이션 롤백 (1단계)
 rollback:
     ENV_FILE=local.yaml uv run alembic downgrade -1
+
+# 번역 메시지 추출
+i18n-extract:
+    uv run pybabel extract -F babel.cfg -o apps/i18n/messages.pot apps/
+
+# 새 언어 추가 (예: just i18n-init en)
+i18n-init locale:
+    uv run pybabel init -i apps/i18n/messages.pot -d apps/i18n/locales -l {{locale}}
+
+# 번역 파일 업데이트
+i18n-update:
+    uv run pybabel update -i apps/i18n/messages.pot -d apps/i18n/locales
+
+# 번역 파일 컴파일
+i18n-compile:
+    uv run pybabel compile -d apps/i18n/locales

@@ -1,16 +1,25 @@
 from typing import cast
+from urllib.parse import urlparse
 
 from fastapi import Request
 from starlette.responses import RedirectResponse
 from authlib.integrations.starlette_client import OAuth, OAuthError
 
+from apps.exceptions import AppException
+from apps.i18n import _
 from apps.types.social import SocialProvider, Social, SocialUserInfo
 
 
 class SocialAuthService:
-    def __init__(self, socials: list[Social], redirect_uri_base: str):
+    def __init__(
+        self,
+        socials: list[Social],
+        redirect_uri_base: str,
+        allowed_redirect_hosts: list[str],
+    ):
         self.oauth = OAuth()
         self.redirect_uri_base = redirect_uri_base
+        self.allowed_redirect_hosts = allowed_redirect_hosts
 
         for social in socials:
             self.oauth.register(
@@ -21,8 +30,15 @@ class SocialAuthService:
                 client_kwargs=social.client_kwargs,
             )
 
+    def validate_redirect_uri(self, redirect_uri: str) -> None:
+        """redirect_uri가 허용된 호스트인지 검증합니다."""
+        parsed = urlparse(redirect_uri)
+        host = parsed.netloc or parsed.scheme  # 커스텀 스킴(myapp://)은 scheme에 있음
+        if host not in self.allowed_redirect_hosts:
+            raise AppException(_("Invalid redirect_uri."))
+
     def _get_redirect_uri(self, provider: SocialProvider) -> str:
-        return f"{self.redirect_uri_base}/auth/{provider.value}/callback"
+        return f"{self.redirect_uri_base}/api/v1/auth/{provider.value}/callback"
 
     async def redirect_login(
         self, request: Request, provider: SocialProvider

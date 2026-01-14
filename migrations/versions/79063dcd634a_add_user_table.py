@@ -1,8 +1,8 @@
 """add user table
 
-Revision ID: ca761d738bd8
+Revision ID: 79063dcd634a
 Revises:
-Create Date: 2026-01-12 19:07:24.331981
+Create Date: 2026-01-13 20:40:44.426389
 
 """
 
@@ -14,7 +14,7 @@ import sqlmodel
 
 
 # revision identifiers, used by Alembic.
-revision: str = "ca761d738bd8"
+revision: str = "79063dcd634a"
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -31,6 +31,9 @@ def upgrade() -> None:
         sa.Column("email", sqlmodel.sql.sqltypes.AutoString(length=50), nullable=False),
         sa.Column(
             "nickname", sqlmodel.sql.sqltypes.AutoString(length=20), nullable=False
+        ),
+        sa.Column(
+            "profile_image", sqlmodel.sql.sqltypes.AutoString(length=255), nullable=True
         ),
         sa.Column(
             "social_provider", sa.Enum("GOOGLE", name="socialprovider"), nullable=False

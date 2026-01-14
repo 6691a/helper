@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, computed_field
 
 
 class Database(BaseModel):
@@ -8,6 +8,6 @@ class Database(BaseModel):
     port: int
     password: str
 
-    @property
+    @computed_field
     def async_psql_database_url(self) -> str:
         return f"postgresql+asyncpg://{self.user}:{self.password}@{self.host}:{self.port}/{self.name}"

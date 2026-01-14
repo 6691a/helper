@@ -24,4 +24,5 @@ class SocialUserInfo(BaseModel):
 
 class SocialConfig(BaseModel):
     redirect_uri_base: str
+    allowed_redirect_hosts: list[str]
     providers: list[Social]

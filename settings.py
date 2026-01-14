@@ -8,7 +8,9 @@ from pydantic_settings import (
     SettingsConfigDict,
 )
 
+from apps.types.auth import AuthConfig
 from apps.types.database import Database
+from apps.types.redis import RedisConfig
 from apps.types.social import SocialConfig
 
 ROOT_DIR = Path(__file__).parent.resolve()
@@ -19,7 +21,9 @@ class _Settings(BaseSettings):
     root_dir: Path = ROOT_DIR
     secret_key: str
     database: Database
+    redis: RedisConfig
     social: SocialConfig
+    auth: AuthConfig
 
     model_config = SettingsConfigDict(
         case_sensitive=False,
