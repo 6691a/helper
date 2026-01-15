@@ -1,7 +1,8 @@
-from . import auth
+from . import auth, voice
 
 routers = [
     auth.router,
+    voice.router,
 ]
 
 __all__ = [

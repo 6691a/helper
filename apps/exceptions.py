@@ -46,6 +46,16 @@ class ConflictError(AppException):
         )
 
 
+class VoiceProcessingError(AppException):
+    """음성 처리 관련 예외"""
+
+    def __init__(self, message: str | None = None):
+        super().__init__(
+            message or _("Voice processing failed."),
+            status.HTTP_400_BAD_REQUEST,
+        )
+
+
 class ValidationErrorDetail(BaseModel):
     field: str
     message: str

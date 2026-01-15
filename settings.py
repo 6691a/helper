@@ -9,9 +9,10 @@ from pydantic_settings import (
 )
 
 from apps.types.auth import AuthConfig
-from apps.types.database import Database
+from apps.types.database import DatabaseConfig
 from apps.types.redis import RedisConfig
 from apps.types.social import SocialConfig
+from apps.types.voice import VoiceConfig
 
 ROOT_DIR = Path(__file__).parent.resolve()
 ENV_FILE = os.getenv("ENV_FILE", "local.yaml")
@@ -20,10 +21,11 @@ ENV_FILE = os.getenv("ENV_FILE", "local.yaml")
 class _Settings(BaseSettings):
     root_dir: Path = ROOT_DIR
     secret_key: str
-    database: Database
+    database: DatabaseConfig
     redis: RedisConfig
     social: SocialConfig
     auth: AuthConfig
+    voice: VoiceConfig
 
     model_config = SettingsConfigDict(
         case_sensitive=False,

@@ -69,3 +69,110 @@ app/
 3. **Phase 3**: AI assistant with Gemini function calling
 4. **Phase 4**: Session-based auth with Redis
 5. **Phase 5**: Statistics, social login, barcode scanning
+
+## Internationalization (i18n)
+
+이 프로젝트는 GNU gettext 기반 다국어 지원을 사용합니다.
+
+### 지원 언어
+
+- `en` (English) - 기본값
+- `ko` (한국어)
+
+### 사용법
+
+```python
+from apps.i18n import _
+
+# 코드에서 번역 가능한 문자열 사용
+raise AppException(_("Resource not found."))
+```
+
+### 번역 파일 구조
+
+```
+apps/i18n/
+├── __init__.py          # get_locale(), set_locale(), _() 함수
+├── middleware.py        # Accept-Language 헤더 처리
+└── locales/
+    ├── en/LC_MESSAGES/
+    │   └── messages.po  # 영어 번역
+    └── ko/LC_MESSAGES/
+        └── messages.po  # 한국어 번역
+```
+
+### 번역 파일 생성/업데이트
+
+```bash
+# 소스에서 번역 대상 문자열 추출
+uv run pybabel extract -F babel.cfg -o messages.pot .
+
+# 새 언어 추가
+uv run pybabel init -i messages.pot -d apps/i18n/locales -l ko
+
+# 기존 번역 업데이트
+uv run pybabel update -i messages.pot -d apps/i18n/locales
+
+# .po → .mo 컴파일
+uv run pybabel compile -d apps/i18n/locales
+```
+
+### 클라이언트 요청
+
+클라이언트는 `Accept-Language` 헤더로 언어를 지정:
+
+```
+Accept-Language: ko-KR,ko;q=0.9,en-US;q=0.8
+```
+
+## API Response Format
+
+### 성공 응답
+
+```json
+{
+  "code": 200,
+  "message": "SUCCESS",
+  "result": { ... }
+}
+```
+
+### 에러 응답
+
+```json
+{
+  "code": 400,
+  "message": "에러 메시지 (다국어 지원)",
+  "result": null
+}
+```
+
+### ResponseProvider 사용
+
+```python
+from apps.schemas.common import ResponseProvider
+
+# 200 OK
+return ResponseProvider.success(result)
+
+# 201 Created
+return ResponseProvider.created(result)
+
+# 에러
+return ResponseProvider.failed(status_code, message)
+```
+
+### 예외 처리
+
+```python
+from apps.exceptions import AppException, NotFoundError, VoiceProcessingError
+
+# 일반 예외
+raise AppException(_("Something went wrong."))
+
+# 404 Not Found
+raise NotFoundError(_("Item not found."))
+
+# 음성 처리 에러
+raise VoiceProcessingError(_("Voice processing failed."))
+```

@@ -5,8 +5,11 @@ from apps.repositories.user import UserRepository
 from apps.services.auth import AuthService
 from apps.services.session import SessionService
 from apps.services.social import SocialAuthService
+from apps.services.voice import VoiceService
+from apps.types.database import DatabaseConfig
 from apps.types.redis import RedisConfig
 from apps.types.social import Social
+from apps.types.voice import VoiceConfig
 from database import Database
 
 
@@ -17,10 +20,11 @@ class Container(containers.DeclarativeContainer):
 
     database = providers.Singleton(
         Database,
-        db_url=config.database.async_psql_database_url(),
-        echo=True,
+        database_config=providers.Factory(
+            lambda c: DatabaseConfig(**c),
+            config.database,
+        ),
     )
-
     session_service = providers.Singleton(
         SessionService,
         redis_config=providers.Factory(
@@ -56,4 +60,12 @@ class Container(containers.DeclarativeContainer):
         SessionAuthBackend,
         session_service=session_service,
         database=database,
+    )
+
+    voice_service = providers.Singleton(
+        VoiceService,
+        config=providers.Factory(
+            lambda c: VoiceConfig(**c),
+            config.voice,
+        ),
     )

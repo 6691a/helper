@@ -6,11 +6,15 @@ from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
     create_async_engine,
 )
+from apps.types.database import DatabaseConfig
 
 
 class Database:
-    def __init__(self, db_url: str, echo: bool = False) -> None:
-        self._engine = create_async_engine(db_url, echo=echo)
+    def __init__(self, database_config: DatabaseConfig) -> None:
+        self.database_config = database_config
+        self._engine = create_async_engine(
+            database_config.async_psql_database_url, echo=database_config.echo
+        )
         self._session_factory = async_sessionmaker(
             bind=self._engine,
             class_=AsyncSession,
