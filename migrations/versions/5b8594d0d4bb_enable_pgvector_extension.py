@@ -1,7 +1,7 @@
 """enable pgvector extension
 
 Revision ID: 5b8594d0d4bb
-Revises: 79063dcd634a
+Revises:
 Create Date: 2026-01-17 13:29:48.909953
 
 """
@@ -14,7 +14,7 @@ import sqlmodel
 
 # revision identifiers, used by Alembic.
 revision: str = '5b8594d0d4bb'
-down_revision: Union[str, Sequence[str], None] = '79063dcd634a'
+down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

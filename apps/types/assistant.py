@@ -1,4 +1,5 @@
-from datetime import date, time
+from datetime import date
+from datetime import time as _time
 from enum import Enum
 from typing import Any
 
@@ -79,7 +80,7 @@ class ReminderInfo(BaseModel):
         default=None,
         description="특정 일자 (frequency=once일 때 필수)",
     )
-    time: time | None = Field(
+    time: _time | None = Field(
         default=None,
         description="알림 시간",
     )
