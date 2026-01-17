@@ -1,11 +1,14 @@
 from dependency_injector import containers, providers
 
 from apps.auth import SessionAuthBackend
+from apps.repositories.memory import MemoryRepository
 from apps.repositories.user import UserRepository
+from apps.services.assistant import AssistantService
 from apps.services.auth import AuthService
 from apps.services.session import SessionService
 from apps.services.social import SocialAuthService
 from apps.services.voice import VoiceService
+from apps.types.assistant import AssistantConfig
 from apps.types.database import DatabaseConfig
 from apps.types.redis import RedisConfig
 from apps.types.social import Social
@@ -68,4 +71,18 @@ class Container(containers.DeclarativeContainer):
             lambda c: VoiceConfig(**c),
             config.voice,
         ),
+    )
+
+    memory_repository = providers.Factory(
+        MemoryRepository,
+        database=database,
+    )
+
+    assistant_service = providers.Singleton(
+        AssistantService,
+        config=providers.Factory(
+            lambda c: AssistantConfig(**c),
+            config.assistant,
+        ),
+        memory_repository=memory_repository,
     )

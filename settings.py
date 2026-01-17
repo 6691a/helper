@@ -8,6 +8,7 @@ from pydantic_settings import (
     SettingsConfigDict,
 )
 
+from apps.types.assistant import AssistantConfig
 from apps.types.auth import AuthConfig
 from apps.types.database import DatabaseConfig
 from apps.types.redis import RedisConfig
@@ -26,6 +27,7 @@ class _Settings(BaseSettings):
     social: SocialConfig
     auth: AuthConfig
     voice: VoiceConfig
+    assistant: AssistantConfig
 
     model_config = SettingsConfigDict(
         case_sensitive=False,
