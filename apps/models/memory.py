@@ -6,13 +6,14 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlmodel import Field
 
 from apps.models.base import BaseModel
+from apps.types.assistant import MemoryType
 
 
 class Memory(BaseModel, table=True):
     """통합 정보 기억 모델 - 물품, 장소, 일정, 인물, 메모 등 모든 정보 저장"""
 
-    # 정보 유형: item, place, schedule, person, memo
-    type: str = Field(max_length=50, nullable=False, index=True)
+    # 정보 유형
+    type: MemoryType = Field(nullable=False, index=True)
 
     # 검색용 키워드 (쉼표 구분)
     # 예: "척추 디스크, 비수술 치료, 디스크"

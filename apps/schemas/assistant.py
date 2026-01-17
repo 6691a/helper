@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field
 
 from apps.schemas.memory import MemoryResponse, MemorySearchResult
-from apps.types.assistant import IntentType
+from apps.types.assistant import IntentType, ReminderInfo
 
 
 class AssistantRequest(BaseModel):
@@ -15,6 +15,9 @@ class AssistantSaveResponse(BaseModel):
 
     message: str = Field(description="저장 결과 메시지")
     memory: MemoryResponse = Field(description="저장된 Memory 정보")
+    reminder: ReminderInfo | None = Field(
+        default=None, description="설정된 알림 정보 (알림 요청이 있었을 때)"
+    )
 
 
 class AssistantQueryResponse(BaseModel):

@@ -59,7 +59,28 @@ metadata 예시:
 - place: {"place": "장소명", "method": "가는 방법", "purpose": "목적"}
 - schedule: {"datetime": "일시", "place": "장소", "with_whom": "누구와"}
 - person: {"name": "이름", "phone": "전화번호", "relation": "관계"}
-- memo: {"category": "분류"}"""
+- memo: {"category": "분류"}
+
+reminder 추출 (알림 요청이 있을 때만):
+"알려줘", "리마인드", "잊지 않게" 등 알림 요청이 있으면 reminder를 추출하세요.
+
+frequency 값:
+- once: 1회성 (특정 날짜, 예: "1월 25일에 알려줘")
+- daily: 매일 (예: "매일 아침 알려줘")
+- weekly: 매주 (예: "매주 월요일 알려줘")
+- monthly: 매월 (예: "매달 1일에 알려줘")
+
+weekday 값 (frequency=weekly일 때):
+- monday, tuesday, wednesday, thursday, friday, saturday, sunday
+
+예시:
+- "매주 월요일 알려줘" → frequency: weekly, weekday: monday
+- "매달 15일에 알려줘" → frequency: monthly, day_of_month: 15
+- "2025-02-14에 알려줘" → frequency: once, specific_date: "2025-02-14"
+- "매일 오전 9시에 알려줘" → frequency: daily, time: "09:00"
+- "다음 주 금요일 3시에" → frequency: once, specific_date: "YYYY-MM-DD", time: "15:00"
+
+알림 요청이 없으면 reminder는 null로 두세요."""
 
     ANSWER_SYSTEM_PROMPT = """당신은 친절한 AI 비서입니다.
 사용자의 질문에 대해 검색된 관련 정보를 바탕으로 자연스럽게 답변하세요.
@@ -157,7 +178,7 @@ metadata 예시:
 
         # 3. Memory 저장
         memory = Memory(
-            type=parsed.type.value,
+            type=parsed.type,
             keywords=parsed.keywords,
             content=parsed.content,
             metadata_=parsed.metadata,
@@ -167,9 +188,15 @@ metadata 예시:
         )
         saved_memory = await self.memory_repository.create(memory)
 
+        # 4. 응답 메시지 생성
+        message = f"'{parsed.type.value}' 정보를 저장했습니다."
+        if parsed.reminder:
+            message += " 알림도 설정되었습니다."
+
         return AssistantSaveResponse(
-            message=f"'{parsed.type.value}' 정보를 저장했습니다.",
+            message=message,
             memory=MemoryResponse.model_validate(saved_memory),
+            reminder=parsed.reminder,
         )
 
     async def _parse_text(self, text: str) -> ParsedMemory:

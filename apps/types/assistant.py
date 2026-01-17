@@ -1,3 +1,4 @@
+from datetime import date, time
 from enum import Enum
 from typing import Any
 
@@ -27,6 +28,27 @@ class MemoryType(str, Enum):
     MEMO = "memo"  # 기타 메모
 
 
+class ReminderFrequency(str, Enum):
+    """알림 반복 주기"""
+
+    ONCE = "once"  # 1회성
+    DAILY = "daily"  # 매일
+    WEEKLY = "weekly"  # 매주
+    MONTHLY = "monthly"  # 매월
+
+
+class Weekday(str, Enum):
+    """요일"""
+
+    MONDAY = "monday"
+    TUESDAY = "tuesday"
+    WEDNESDAY = "wednesday"
+    THURSDAY = "thursday"
+    FRIDAY = "friday"
+    SATURDAY = "saturday"
+    SUNDAY = "sunday"
+
+
 # ============================================================
 # LLM Structured Output Models
 # ============================================================
@@ -39,6 +61,30 @@ class IntentClassification(BaseModel):
     reason: str = Field(description="판단 이유")
 
 
+class ReminderInfo(BaseModel):
+    """알림 정보 (with_structured_output용)"""
+
+    frequency: ReminderFrequency = Field(description="알림 반복 주기")
+    weekday: Weekday | None = Field(
+        default=None,
+        description="요일 (frequency=weekly일 때 필수)",
+    )
+    day_of_month: int | None = Field(
+        default=None,
+        ge=1,
+        le=31,
+        description="매월 몇 일 (frequency=monthly일 때 필수, 1~31)",
+    )
+    specific_date: date | None = Field(
+        default=None,
+        description="특정 일자 (frequency=once일 때 필수)",
+    )
+    time: time | None = Field(
+        default=None,
+        description="알림 시간",
+    )
+
+
 class ParsedMemory(BaseModel):
     """LLM 텍스트 파싱 결과 (with_structured_output용)"""
 
@@ -47,6 +93,10 @@ class ParsedMemory(BaseModel):
     content: str = Field(description="AI가 정리한 핵심 내용 한두 문장")
     metadata: dict[str, Any] | None = Field(
         default=None, description="유형별 추가 정보"
+    )
+    reminder: ReminderInfo | None = Field(
+        default=None,
+        description="알림 설정 (알려줘, 리마인드 등 알림 요청이 있을 때만)",
     )
 
 

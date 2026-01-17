@@ -11,7 +11,7 @@ from apps.schemas.voice import (
     TranscribeDetailedResponse,
     TranscribeSegment,
 )
-from apps.types.voice import VoiceConfig
+from apps.types.voice import LanguageCode, SpeechModel, VoiceConfig
 
 
 class VoiceService:
@@ -37,10 +37,11 @@ class VoiceService:
     def validate_file(self, filename: str, file_size: int) -> None:
         """파일 유효성 검사"""
         ext = Path(filename).suffix.lower().lstrip(".")
-        if ext not in self.config.supported_formats:
+        supported_values = [fmt.value for fmt in self.config.supported_formats]
+        if ext not in supported_values:
             raise VoiceProcessingError(
                 _("Unsupported format: {}. Supported: {}").format(
-                    ext, ", ".join(self.config.supported_formats)
+                    ext, ", ".join(supported_values)
                 )
             )
 
@@ -56,7 +57,7 @@ class VoiceService:
         self,
         audio_content: bytes,
         filename: str,
-        language: str | None = None,
+        language: LanguageCode | None = None,
         detailed: bool = False,
     ) -> TranscribeResponse | TranscribeDetailedResponse:
         """
@@ -71,12 +72,12 @@ class VoiceService:
         Returns:
             TranscribeResponse 또는 TranscribeDetailedResponse
         """
-        language_code = language or self.config.language
+        used_language = language or self.config.language
 
         config = cloud_speech.RecognitionConfig(
             auto_decoding_config=cloud_speech.AutoDetectDecodingConfig(),
-            language_codes=[language_code],
-            model="short",  # 1분 이하 오디오용, 더 빠름
+            language_codes=[used_language.value],
+            model=SpeechModel.SHORT.value,
             features=cloud_speech.RecognitionFeatures(
                 enable_automatic_punctuation=True,
             ),
@@ -99,7 +100,7 @@ class VoiceService:
         if not response.results:
             return TranscribeResponse(
                 text="",
-                language=language_code,
+                language=used_language,
                 confidence=None,
             )
 
@@ -127,13 +128,13 @@ class VoiceService:
         if detailed:
             return TranscribeDetailedResponse(
                 text=full_text,
-                language=language_code,
+                language=used_language,
                 confidence=avg_confidence,
                 segments=segments,
             )
 
         return TranscribeResponse(
             text=full_text,
-            language=language_code,
+            language=used_language,
             confidence=avg_confidence,
         )

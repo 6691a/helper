@@ -4,7 +4,7 @@ from apps.models.user import User
 from apps.repositories.user import UserRepository
 from apps.services.session import SessionService
 from apps.types.auth import AuthCodeData
-from apps.types.social import SocialProvider, SocialUserInfo
+from apps.types.social import SocialUserInfo
 
 
 class AuthService:
@@ -37,7 +37,7 @@ class AuthService:
 
         auth_code = await self.session_service.create_auth_code(
             AuthCodeData(
-                provider=user_info.provider.value,
+                provider=user_info.provider,
                 social_id=user_info.social_id,
                 email=user_info.email,
                 nickname=user_info.nickname,
@@ -73,7 +73,7 @@ class AuthService:
             email=auth_data.email,
             nickname=nickname,
             profile_image=profile_image,
-            social_provider=SocialProvider(auth_data.provider),
+            social_provider=auth_data.provider,
             social_id=auth_data.social_id,
         )
         user = await self.user_repository.create(user)
