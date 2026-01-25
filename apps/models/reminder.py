@@ -1,11 +1,17 @@
 from datetime import date, datetime
 from datetime import time as _time
+from typing import TYPE_CHECKING
 
-from sqlmodel import Field
+from sqlmodel import Field, Relationship
 
+from apps.models import Memory
 from apps.models.base import BaseModel
+from apps.models.links import ConversationReminderLink
 from apps.types.assistant import ReminderFrequency, Weekday
 from apps.types.reminder import ReminderStatus
+
+if TYPE_CHECKING:
+    from apps.models.conversation import Conversation
 
 
 class Reminder(BaseModel, table=True):
@@ -13,7 +19,7 @@ class Reminder(BaseModel, table=True):
 
     # Memory 연결 (알림 대상 정보)
     memory_id: int = Field(foreign_key="memory.id", nullable=False, index=True)
-
+    memory: "Memory" = Relationship()
     # 반복 주기
     frequency: ReminderFrequency = Field(nullable=False)
 
@@ -33,9 +39,13 @@ class Reminder(BaseModel, table=True):
     next_run_at: datetime | None = Field(default=None, index=True)
 
     # 상태
-    status: ReminderStatus = Field(
-        default=ReminderStatus.ACTIVE, nullable=False, index=True
-    )
+    status: ReminderStatus = Field(default=ReminderStatus.ACTIVE, nullable=False, index=True)
 
     # 사용자 ID
     user_id: int | None = Field(default=None, foreign_key="user.id", index=True)
+
+    # Relationships
+    conversations: list[Conversation] = Relationship(
+        back_populates="reminders",
+        link_model=ConversationReminderLink,
+    )

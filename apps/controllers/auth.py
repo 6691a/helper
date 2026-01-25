@@ -1,13 +1,13 @@
 from typing import Annotated
 from urllib.parse import urlencode
 
-from dependency_injector.wiring import inject, Provide
-from fastapi import APIRouter, Request, Depends
-from starlette.authentication import requires
+from dependency_injector.wiring import Provide, inject
+from fastapi import APIRouter, Depends, Request
 from fastapi.responses import JSONResponse
+from starlette.authentication import requires
 from starlette.responses import RedirectResponse
 
-from apps.schemas.auth import SignupRequest, AuthResponse, UserResponse
+from apps.schemas.auth import AuthResponse, SignupRequest
 from apps.schemas.common import Response, ResponseProvider
 from apps.services.auth import AuthService
 from apps.services.social import SocialAuthService
@@ -98,18 +98,3 @@ async def logout(
     token = request.headers.get("Authorization", "").replace("Bearer ", "")
     await auth_service.logout(token)
     return ResponseProvider.success(None)
-
-
-@router.get("/me", response_model=Response[UserResponse])
-@requires("authenticated")
-async def get_me(request: Request) -> JSONResponse:
-    """현재 로그인한 사용자 정보를 조회합니다."""
-    user = request.user.user
-    return ResponseProvider.success(
-        UserResponse(
-            id=user.id,
-            email=user.email,
-            nickname=user.nickname,
-            profile_image=user.profile_image,
-        )
-    )

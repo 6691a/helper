@@ -1,0 +1,104 @@
+# Korean translations for PROJECT.
+# Copyright (C) 2026 ORGANIZATION
+# This file is distributed under the same license as the PROJECT project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2026-01-24 22:00+0900\n"
+"PO-Revision-Date: 2026-01-24 22:01+0900\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: ko\n"
+"Language-Team: ko <LL@li.org>\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.17.0\n"
+
+#: apps/exceptions.py:24
+msgid "Authentication failed."
+msgstr "인증에 실패했습니다."
+
+#: apps/exceptions.py:34
+msgid "Resource not found."
+msgstr "리소스를 찾을 수 없습니다."
+
+#: apps/exceptions.py:44
+msgid "Resource already exists."
+msgstr "리소스가 이미 존재합니다."
+
+#: apps/exceptions.py:54
+msgid "Voice processing failed."
+msgstr "음성 처리에 실패했습니다."
+
+#: apps/services/assistant.py:162
+msgid ""
+"Sorry, I didn't understand your request. Please remember information or "
+"ask a question."
+msgstr "죄송합니다, 요청을 이해하지 못했습니다. 정보를 기억하거나 질문해주세요."
+
+#: apps/services/assistant.py:186
+msgid "Classification failed"
+msgstr "분류 실패"
+
+#: apps/services/assistant.py:260
+#, python-brace-format
+msgid "'{}' information has been saved."
+msgstr "'{}' 정보를 저장했습니다."
+
+#: apps/services/assistant.py:262
+msgid "Reminder has also been set."
+msgstr "알림도 설정되었습니다."
+
+#: apps/services/auth.py:62
+msgid "Invalid or expired auth code."
+msgstr "유효하지 않거나 만료된 인증 코드입니다."
+
+#: apps/services/auth.py:66
+msgid "Nickname already in use."
+msgstr "이미 사용 중인 닉네임입니다."
+
+#: apps/services/auth.py:70
+msgid "Email already registered."
+msgstr "이미 등록된 이메일입니다."
+
+#: apps/services/auth.py:94
+msgid "Invalid or expired session."
+msgstr "유효하지 않거나 만료된 세션입니다."
+
+#: apps/services/auth.py:98
+msgid "User not found."
+msgstr "사용자를 찾을 수 없습니다."
+
+#: apps/services/reminder.py:26 apps/services/reminder.py:79
+#: apps/services/reminder.py:100 apps/services/reminder.py:109
+#: apps/services/reminder.py:121
+msgid "Reminder not found."
+msgstr "리마인더를 찾을 수 없습니다."
+
+#: apps/services/reminder.py:52
+msgid "Memory not found."
+msgstr "메모리를 찾을 수 없습니다."
+
+#: apps/services/social.py:38
+msgid "Invalid redirect_uri."
+msgstr "유효하지 않은 redirect_uri입니다."
+
+#: apps/services/voice.py:43
+#, python-brace-format
+msgid "Unsupported format: {}. Supported: {}"
+msgstr "지원하지 않는 형식: {}. 지원 형식: {}"
+
+#: apps/services/voice.py:49
+#, python-brace-format
+msgid "File too large: {:.1f}MB. Max: {}MB"
+msgstr "파일이 너무 큽니다: {:.1f}MB. 최대: {}MB"
+
+#: apps/services/voice.py:102
+#, python-brace-format
+msgid "Speech recognition failed: {}"
+msgstr "음성 인식 실패: {}"
+

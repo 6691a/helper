@@ -1,21 +1,32 @@
+import logging
+from datetime import time as _time
+
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
 from pydantic import SecretStr
 
+from apps.i18n import _
 from apps.models.memory import Memory
+from apps.models.reminder import Reminder
 from apps.repositories.memory import MemoryRepository
+from apps.repositories.reminder import ReminderRepository
 from apps.schemas.assistant import (
     AssistantQueryResponse,
     AssistantResponse,
     AssistantSaveResponse,
 )
 from apps.schemas.memory import MemoryResponse, MemorySearchResult
+from apps.schemas.reminder import ReminderResponse
 from apps.types.assistant import (
     AssistantConfig,
     IntentClassification,
     IntentType,
     ParsedMemory,
+    ReminderInfo,
 )
+from apps.utils.reminder_calculator import ReminderCalculator
+
+logger = logging.getLogger(__name__)
 
 
 class AssistantService:
@@ -92,9 +103,11 @@ weekday 값 (frequency=weekly일 때):
         self,
         config: AssistantConfig,
         memory_repository: MemoryRepository,
+        reminder_repository: ReminderRepository,
     ):
         self.config = config
         self.memory_repository = memory_repository
+        self.reminder_repository = reminder_repository
         self._llm: ChatGoogleGenerativeAI | None = None
         self._embeddings: GoogleGenerativeAIEmbeddings | None = None
 
@@ -120,7 +133,7 @@ weekday 값 (frequency=weekly일 때):
             )
         return self._embeddings
 
-    async def process(self, text: str, user_id: int | None = None) -> AssistantResponse:
+    async def process(self, text: str, user_id: int | None) -> AssistantResponse:
         """
         사용자 입력을 처리합니다.
 
@@ -145,7 +158,9 @@ weekday 값 (frequency=weekly일 때):
         else:
             return AssistantResponse(
                 intent=IntentType.UNKNOWN,
-                error_message="죄송합니다, 요청을 이해하지 못했습니다. 정보를 기억하거나 질문해주세요.",
+                error_message=_(
+                    "Sorry, I didn't understand your request. Please remember information or ask a question."
+                ),
             )
 
     async def _classify_intent(self, text: str) -> IntentClassification:
@@ -161,43 +176,93 @@ weekday 값 (frequency=weekly일 때):
             result = await structured_llm.ainvoke(messages)
             if isinstance(result, IntentClassification):
                 return result
-        except Exception:
-            pass
+        except ValueError as e:
+            logger.warning(f"Intent classification parsing failed: {e}")
+        except Exception as e:
+            logger.error(f"Unexpected error during intent classification: {e}", exc_info=True)
 
-        return IntentClassification(intent=IntentType.UNKNOWN, reason="분류 실패")
+        return IntentClassification(intent=IntentType.UNKNOWN, reason=_("Classification failed"))
 
-    async def _handle_save(
-        self, text: str, user_id: int | None
-    ) -> AssistantSaveResponse:
+    async def _handle_save(self, text: str, user_id: int | None) -> AssistantSaveResponse:
         """정보를 파싱하고 저장합니다."""
-        # 1. 텍스트 파싱 (with_structured_output 사용)
         parsed = await self._parse_text(text)
-
-        # 2. 임베딩 생성
         embedding = await self.embeddings.aembed_query(text)
+        saved_memory = await self._save_memory(parsed, text, embedding, user_id)
 
-        # 3. Memory 저장
+        memory_id = saved_memory.id
+        if memory_id is None:
+            raise ValueError("Memory ID should not be None after creation")
+
+        saved_reminder = await self._save_reminder(parsed.reminder, memory_id, user_id)
+        message = self._build_save_message(parsed)
+        reminder_response = self._to_reminder_response(saved_reminder)
+
+        return AssistantSaveResponse(
+            message=message,
+            memory=MemoryResponse.model_validate(saved_memory),
+            reminder=reminder_response,
+        )
+
+    def _to_reminder_response(self, reminder: Reminder | None) -> ReminderResponse | None:
+        """Reminder를 ReminderResponse로 변환합니다."""
+        if reminder is None:
+            return None
+        return ReminderResponse.model_validate(reminder)
+
+    async def _save_memory(
+        self,
+        parsed: ParsedMemory,
+        original_text: str,
+        embedding: list[float],
+        user_id: int | None,
+    ) -> Memory:
+        """Memory를 저장합니다."""
         memory = Memory(
             type=parsed.type,
             keywords=parsed.keywords,
             content=parsed.content,
             metadata_=parsed.metadata,
-            original_text=text,
+            original_text=original_text,
             embedding=embedding,
             user_id=user_id,
         )
-        saved_memory = await self.memory_repository.create(memory)
+        return await self.memory_repository.create(memory)
 
-        # 4. 응답 메시지 생성
-        message = f"'{parsed.type.value}' 정보를 저장했습니다."
-        if parsed.reminder:
-            message += " 알림도 설정되었습니다."
+    async def _save_reminder(
+        self,
+        reminder_info: ReminderInfo | None,
+        memory_id: int,
+        user_id: int | None,
+    ) -> Reminder | None:
+        """Reminder를 저장합니다."""
+        if reminder_info is None:
+            return None
 
-        return AssistantSaveResponse(
-            message=message,
-            memory=MemoryResponse.model_validate(saved_memory),
-            reminder=parsed.reminder,
+        reminder_time = reminder_info.time or _time(9, 0)
+        reminder = Reminder(
+            memory_id=memory_id,
+            frequency=reminder_info.frequency,
+            weekday=reminder_info.weekday,
+            day_of_month=reminder_info.day_of_month,
+            specific_date=reminder_info.specific_date,
+            time=reminder_time,
+            next_run_at=ReminderCalculator.calculate_next_run_at(
+                frequency=reminder_info.frequency,
+                reminder_time=reminder_time,
+                weekday=reminder_info.weekday,
+                day_of_month=reminder_info.day_of_month,
+                specific_date=reminder_info.specific_date,
+            ),
+            user_id=user_id,
         )
+        return await self.reminder_repository.create(reminder)
+
+    def _build_save_message(self, parsed: ParsedMemory) -> str:
+        """저장 응답 메시지를 생성합니다."""
+        message = _("'{}' information has been saved.").format(parsed.type.value)
+        if parsed.reminder:
+            message += " " + _("Reminder has also been set.")
+        return message
 
     async def _parse_text(self, text: str) -> ParsedMemory:
         """텍스트에서 정보를 추출합니다 (with_structured_output 사용)."""
@@ -212,8 +277,10 @@ weekday 값 (frequency=weekly일 때):
             result = await structured_llm.ainvoke(messages)
             if isinstance(result, ParsedMemory):
                 return result
-        except Exception:
-            pass
+        except ValueError as e:
+            logger.warning(f"Text parsing failed: {e}")
+        except Exception as e:
+            logger.error(f"Unexpected error during text parsing: {e}", exc_info=True)
 
         # 파싱 실패시 기본값
         from apps.types.assistant import MemoryType
@@ -225,9 +292,7 @@ weekday 값 (frequency=weekly일 때):
             metadata=None,
         )
 
-    async def _handle_query(
-        self, text: str, user_id: int | None
-    ) -> AssistantQueryResponse:
+    async def _handle_query(self, text: str, user_id: int | None) -> AssistantQueryResponse:
         """질문에 답변합니다."""
         # 1. 쿼리 임베딩 생성
         embedding = await self.embeddings.aembed_query(text)
@@ -236,8 +301,8 @@ weekday 값 (frequency=weekly일 때):
         results = await self.memory_repository.search_by_vector(
             embedding=embedding,
             user_id=user_id,
-            limit=5,
-            threshold=0.3,
+            limit=self.config.vector_search_limit,
+            threshold=self.config.vector_search_threshold,
         )
 
         # 3. 검색 결과로 답변 생성
@@ -251,12 +316,7 @@ weekday 값 (frequency=weekly일 때):
 
         # 4. LLM으로 답변 생성
         if results:
-            context = "\n".join(
-                [
-                    f"- {memory.content} (관련도: {similarity:.2f})"
-                    for memory, similarity in results
-                ]
-            )
+            context = "\n".join([f"- {memory.content} (관련도: {similarity:.2f})" for memory, similarity in results])
             answer_prompt = f"""사용자 질문: {text}
 
 관련 정보:
@@ -273,11 +333,7 @@ weekday 값 (frequency=weekly일 때):
             HumanMessage(content=answer_prompt),
         ]
         response = await self.llm.ainvoke(messages)
-        answer = (
-            response.content
-            if isinstance(response.content, str)
-            else str(response.content)
-        )
+        answer = response.content if isinstance(response.content, str) else str(response.content)
 
         return AssistantQueryResponse(
             answer=answer,

@@ -1,12 +1,17 @@
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from pgvector.sqlalchemy import Vector
 from sqlalchemy import Column
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlmodel import Field
+from sqlmodel import Field, Relationship
 
 from apps.models.base import BaseModel
+from apps.models.links import ConversationMemoryLink
 from apps.types.assistant import MemoryType
+
+if TYPE_CHECKING:
+    from apps.models.conversation import Conversation
+    from apps.models.user import User
 
 
 class Memory(BaseModel, table=True):
@@ -37,8 +42,15 @@ class Memory(BaseModel, table=True):
     # 임베딩 벡터 (pgvector)
     embedding: list[float] | None = Field(
         default=None,
-        sa_column=Column(Vector(1024)),
+        sa_column=Column(Vector(3072)),
     )
 
     # 사용자 ID (멀티유저 지원 시)
     user_id: int | None = Field(default=None, foreign_key="user.id", index=True)
+
+    ####### Relationship #######
+    user: User = Relationship(back_populates="memories")
+    conversations: list[Conversation] = Relationship(
+        back_populates="memories",
+        link_model=ConversationMemoryLink,
+    )

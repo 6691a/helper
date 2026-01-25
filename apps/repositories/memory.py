@@ -4,6 +4,7 @@ from sqlalchemy import desc
 from sqlmodel import col, select
 
 from apps.models.memory import Memory
+from apps.types.assistant import MemoryType
 from database import Database
 
 
@@ -13,9 +14,7 @@ class MemoryRepository:
     def __init__(self, database: Database):
         self.database = database
 
-    async def get_by_id(
-        self, memory_id: int, user_id: int | None = None
-    ) -> Memory | None:
+    async def get_by_id(self, memory_id: int, user_id: int | None = None) -> Memory | None:
         """ID로 Memory를 조회합니다."""
         async with self.database.session() as session:
             stmt = select(Memory).where(Memory.id == memory_id)
@@ -27,7 +26,7 @@ class MemoryRepository:
     async def get_all(
         self,
         user_id: int | None = None,
-        type_filter: str | None = None,
+        type_filter: MemoryType | None = None,
         limit: int = 100,
         offset: int = 0,
     ) -> list[Memory]:
@@ -38,9 +37,7 @@ class MemoryRepository:
                 stmt = stmt.where(Memory.user_id == user_id)
             if type_filter:
                 stmt = stmt.where(Memory.type == type_filter)
-            stmt = (
-                stmt.order_by(desc(col(Memory.created_at))).limit(limit).offset(offset)
-            )
+            stmt = stmt.order_by(desc(col(Memory.created_at))).limit(limit).offset(offset)
             result = await session.execute(stmt)
             return list(result.scalars().all())
 
@@ -69,7 +66,7 @@ class MemoryRepository:
         self,
         embedding: list[float],
         user_id: int | None = None,
-        type_filter: str | None = None,
+        type_filter: MemoryType | None = None,
         limit: int = 5,
         threshold: float = 0.5,
     ) -> list[tuple[Memory, float]]:
@@ -92,9 +89,7 @@ class MemoryRepository:
             if type_filter:
                 stmt = stmt.where(Memory.type == type_filter)
 
-            stmt = stmt.where(
-                embedding_col.cosine_distance(embedding) <= distance_threshold
-            )
+            stmt = stmt.where(embedding_col.cosine_distance(embedding) <= distance_threshold)
             stmt = stmt.order_by(embedding_col.cosine_distance(embedding))
             stmt = stmt.limit(limit)
 
@@ -107,7 +102,7 @@ class MemoryRepository:
         self,
         keywords: str,
         user_id: int | None = None,
-        type_filter: str | None = None,
+        type_filter: MemoryType | None = None,
         limit: int = 10,
     ) -> list[Memory]:
         """키워드로 검색합니다 (ILIKE)."""

@@ -52,3 +52,23 @@ i18n-update:
 # 번역 파일 컴파일
 i18n-compile:
     uv run pybabel compile -d apps/i18n/locales
+
+# Celery Worker 실행
+celery-worker:
+    uv run celery -A apps.celery worker --loglevel=info
+
+# Celery Beat 실행 (스케줄러)
+celery-beat:
+    uv run celery -A apps.celery beat --loglevel=info
+
+# Celery Worker + Beat 동시 실행 (개발용)
+celery-dev:
+    uv run celery -A apps.celery worker --beat --loglevel=info
+
+# Celery Flower 모니터링 (선택사항)
+celery-flower:
+    uv run celery -A apps.celery flower --port=5555
+
+# 테스트 사용자 및 인증 토큰 생성 (debug 모드에서만 동작)
+test-token:
+    ENV_FILE=local.yaml PYTHONPATH=. uv run python scripts/create_test_user.py

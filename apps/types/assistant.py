@@ -5,7 +5,6 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-
 # ============================================================
 # Enums
 # ============================================================
@@ -92,9 +91,7 @@ class ParsedMemory(BaseModel):
     type: MemoryType = Field(description="정보 유형")
     keywords: str = Field(description="검색용 키워드, 쉼표로 구분")
     content: str = Field(description="AI가 정리한 핵심 내용 한두 문장")
-    metadata: dict[str, Any] | None = Field(
-        default=None, description="유형별 추가 정보"
-    )
+    metadata: dict[str, Any] | None = Field(default=None, description="유형별 추가 정보")
     reminder: ReminderInfo | None = Field(
         default=None,
         description="알림 설정 (알려줘, 리마인드 등 알림 요청이 있을 때만)",
@@ -115,3 +112,5 @@ class AssistantConfig(BaseModel):
     embedding_dimensions: int = Field(description="임베딩 벡터 차원 (최대 3072)")
     temperature: float = Field(ge=0, le=1, description="LLM 온도")
     max_tokens: int = Field(ge=1, description="최대 토큰 수")
+    vector_search_limit: int = Field(default=5, ge=1, description="벡터 검색 결과 개수 제한")
+    vector_search_threshold: float = Field(default=0.3, ge=0.0, le=1.0, description="벡터 유사도 임계값")

@@ -4,12 +4,13 @@ from pathlib import Path
 from pydantic_settings import (
     BaseSettings,
     PydanticBaseSettingsSource,
-    YamlConfigSettingsSource,
     SettingsConfigDict,
+    YamlConfigSettingsSource,
 )
 
 from apps.types.assistant import AssistantConfig
 from apps.types.auth import AuthConfig
+from apps.types.celery import CeleryConfig
 from apps.types.database import DatabaseConfig
 from apps.types.redis import RedisConfig
 from apps.types.social import SocialConfig
@@ -20,6 +21,7 @@ ENV_FILE = os.getenv("ENV_FILE", "local.yaml")
 
 
 class _Settings(BaseSettings):
+    debug: bool = False
     root_dir: Path = ROOT_DIR
     secret_key: str
     database: DatabaseConfig
@@ -28,6 +30,7 @@ class _Settings(BaseSettings):
     auth: AuthConfig
     voice: VoiceConfig
     assistant: AssistantConfig
+    celery: CeleryConfig
 
     model_config = SettingsConfigDict(
         case_sensitive=False,

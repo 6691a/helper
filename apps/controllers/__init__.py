@@ -1,8 +1,9 @@
-from . import assistant, auth, voice
+from . import assistant, auth, reminder, voice
 
 routers = [
     assistant.router,
     auth.router,
+    reminder.router,
     voice.router,
 ]
 

@@ -1,0 +1,103 @@
+# Translations template for PROJECT.
+# Copyright (C) 2026 ORGANIZATION
+# This file is distributed under the same license as the PROJECT project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2026-01-24 22:00+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.17.0\n"
+
+#: apps/exceptions.py:24
+msgid "Authentication failed."
+msgstr ""
+
+#: apps/exceptions.py:34
+msgid "Resource not found."
+msgstr ""
+
+#: apps/exceptions.py:44
+msgid "Resource already exists."
+msgstr ""
+
+#: apps/exceptions.py:54
+msgid "Voice processing failed."
+msgstr ""
+
+#: apps/services/assistant.py:162
+msgid ""
+"Sorry, I didn't understand your request. Please remember information or "
+"ask a question."
+msgstr ""
+
+#: apps/services/assistant.py:186
+msgid "Classification failed"
+msgstr ""
+
+#: apps/services/assistant.py:260
+#, python-brace-format
+msgid "'{}' information has been saved."
+msgstr ""
+
+#: apps/services/assistant.py:262
+msgid "Reminder has also been set."
+msgstr ""
+
+#: apps/services/auth.py:62
+msgid "Invalid or expired auth code."
+msgstr ""
+
+#: apps/services/auth.py:66
+msgid "Nickname already in use."
+msgstr ""
+
+#: apps/services/auth.py:70
+msgid "Email already registered."
+msgstr ""
+
+#: apps/services/auth.py:94
+msgid "Invalid or expired session."
+msgstr ""
+
+#: apps/services/auth.py:98
+msgid "User not found."
+msgstr ""
+
+#: apps/services/reminder.py:26 apps/services/reminder.py:79
+#: apps/services/reminder.py:100 apps/services/reminder.py:109
+#: apps/services/reminder.py:121
+msgid "Reminder not found."
+msgstr ""
+
+#: apps/services/reminder.py:52
+msgid "Memory not found."
+msgstr ""
+
+#: apps/services/social.py:38
+msgid "Invalid redirect_uri."
+msgstr ""
+
+#: apps/services/voice.py:43
+#, python-brace-format
+msgid "Unsupported format: {}. Supported: {}"
+msgstr ""
+
+#: apps/services/voice.py:49
+#, python-brace-format
+msgid "File too large: {:.1f}MB. Max: {}MB"
+msgstr ""
+
+#: apps/services/voice.py:102
+#, python-brace-format
+msgid "Speech recognition failed: {}"
+msgstr ""
+
