@@ -32,17 +32,21 @@ class SessionAuthBackend(AuthenticationBackend):
         self.session_service = session_service
         self.database = database
 
-    async def authenticate(
-        self, conn: HTTPConnection
-    ) -> tuple[AuthCredentials, BaseUser] | None:
+    async def authenticate(self, conn: HTTPConnection) -> tuple[AuthCredentials, BaseUser] | None:
+        token = None
+
+        # 1. Authorization 헤더에서 토큰 확인
         auth_header = conn.headers.get("Authorization")
-        if not auth_header:
-            return None
+        if auth_header and auth_header.startswith("Bearer "):
+            token = auth_header.replace("Bearer ", "")
 
-        if not auth_header.startswith("Bearer "):
-            return None
+        # 2. 쿠키에서 토큰 확인 (WebSocket 지원)
+        if not token:
+            token = conn.cookies.get("token")
 
-        token = auth_header.replace("Bearer ", "")
+        # 토큰이 없으면 인증 실패
+        if not token:
+            return None
 
         user_id = await self.session_service.get_user_id(token)
         if user_id is None:

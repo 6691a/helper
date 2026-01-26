@@ -45,7 +45,7 @@ class Reminder(BaseModel, table=True):
     user_id: int | None = Field(default=None, foreign_key="user.id", index=True)
 
     # Relationships
-    conversations: list[Conversation] = Relationship(
+    conversations: list["Conversation"] = Relationship(
         back_populates="reminders",
         link_model=ConversationReminderLink,
     )

@@ -45,14 +45,14 @@ class Conversation(BaseModel, table=True):
     )
 
     # Relationships
-    voice_session: VoiceSession = Relationship(
+    voice_session: "VoiceSession" = Relationship(
         back_populates="conversation",
     )
-    memories: list[Memory] = Relationship(
+    memories: list["Memory"] = Relationship(
         back_populates="conversations",
         link_model=ConversationMemoryLink,
     )
-    reminders: list[Reminder] = Relationship(
+    reminders: list["Reminder"] = Relationship(
         back_populates="conversations",
         link_model=ConversationReminderLink,
     )

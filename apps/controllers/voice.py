@@ -1,7 +1,7 @@
 from typing import Annotated
 
 from dependency_injector.wiring import Provide, inject
-from fastapi import APIRouter, Depends, Query, Request, WebSocket
+from fastapi import APIRouter, Depends, Query, WebSocket
 from fastapi.responses import JSONResponse
 from starlette.authentication import requires
 
@@ -51,7 +51,6 @@ async def transcribe(
 @inject
 async def stream_transcribe(
     websocket: WebSocket,
-    request: Request,
     streaming_voice_service: Annotated[
         StreamingVoiceService,
         Depends(Provide[Container.streaming_voice_service]),
@@ -80,8 +79,8 @@ async def stream_transcribe(
     """
     await websocket.accept()
 
-    # 인증된 사용자 정보 추출
-    user_id = request.user.user.id
+    # 인증된 사용자 정보 추출 (websocket.user는 AuthenticationMiddleware가 설정)
+    user_id = websocket.user.user.id
 
     # Consumer 패턴으로 WebSocket 처리
     consumer = VoiceStreamConsumer(

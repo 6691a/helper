@@ -49,8 +49,8 @@ class Memory(BaseModel, table=True):
     user_id: int | None = Field(default=None, foreign_key="user.id", index=True)
 
     ####### Relationship #######
-    user: User = Relationship(back_populates="memories")
-    conversations: list[Conversation] = Relationship(
+    user: "User" = Relationship(back_populates="memories")
+    conversations: list["Conversation"] = Relationship(
         back_populates="memories",
         link_model=ConversationMemoryLink,
     )

@@ -48,7 +48,7 @@ class VoiceSession(BaseModel, table=True):
     )
 
     # Relationships
-    conversation: Conversation | None = Relationship(
+    conversation: "Conversation" = Relationship(
         back_populates="voice_session",
         sa_relationship_kwargs={"uselist": False},
     )

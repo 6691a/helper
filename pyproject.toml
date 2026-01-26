@@ -34,6 +34,7 @@ dev = [
     "pytest-cov>=7.0.0",
     "pytest-mock>=3.15.1",
     "ruff>=0.14.11",
+    "sqlalchemy[mypy]>=2.0.45",
 ]
 
 [tool.mypy]
@@ -44,6 +45,7 @@ exclude = [
     "main.py"
 ]
 ignore_missing_imports = true
+plugins = ["sqlalchemy.ext.mypy.plugin"]
 
 [[tool.mypy.overrides]]
 module = "settings"
@@ -56,6 +58,10 @@ disable_error_code = ["no-untyped-call"]
 [[tool.mypy.overrides]]
 module = "apps.services.streaming_voice"
 disable_error_code = ["no-untyped-call", "no-any-return"]
+
+[[tool.mypy.overrides]]
+module = "apps.models.base"
+disable_error_code = ["call-overload"]
 
 [tool.ruff]
 exclude = ["migrations/"]
