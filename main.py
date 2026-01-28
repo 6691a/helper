@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.openapi.utils import get_openapi
+from fastapi.staticfiles import StaticFiles
 from starlette.middleware.authentication import AuthenticationMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 
@@ -73,3 +74,6 @@ exception_handlers(app)
 
 for router in routers:
     app.include_router(router)
+
+# Static files
+app.mount("/static", StaticFiles(directory="static"), name="static")

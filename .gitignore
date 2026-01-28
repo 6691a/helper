@@ -52,3 +52,5 @@ htmlcov/
 
 # Ruff
 .ruff_cache/
+
+recordings/

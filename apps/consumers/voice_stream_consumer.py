@@ -1,9 +1,10 @@
 """WebSocket 음성 스트리밍 Consumer (Django Channels 패턴)"""
 
 import asyncio
+import json
 import logging
 import wave
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, MutableMapping
 from datetime import datetime
 from typing import Any
 from uuid import uuid4
@@ -71,6 +72,9 @@ class VoiceStreamConsumer:
         self.final_transcript = ""
         self.final_confidence = 0.0
 
+        # WebSocket 상태
+        self._websocket_closed = False
+
     async def handle(self) -> None:
         """
         메인 핸들러 메서드 (Django Channels의 Consumer.receive와 유사)
@@ -85,7 +89,6 @@ class VoiceStreamConsumer:
         except WebSocketDisconnect:
             pass
         except Exception as e:
-            print(e)
             logger.exception(e)
         finally:
             await self._cleanup(receive_task, send_task)
@@ -94,30 +97,70 @@ class VoiceStreamConsumer:
         """
         WebSocket에서 오디오 바이트를 수신합니다.
 
-        클라이언트는 단순히 오디오 바이트를 전송하고,
-        전송이 끝나면 웹소켓을 close하면 됩니다.
+        클라이언트는 오디오 바이트를 전송하고,
+        녹음 종료 시 {"type": "stop"} JSON 메시지를 전송합니다.
         """
-        chunk_count = 0
-
         try:
             while self.is_streaming:
-                # 바이너리 데이터만 수신
-                audio_data = await self.websocket.receive_bytes()
-                chunk_count += 1
+                message = await self.websocket.receive()
 
-                # 모든 오디오 데이터 수집 (WAV 저장용)
-                self.audio_chunks.append(audio_data)
+                if message["type"] == "websocket.disconnect":
+                    self._websocket_closed = True
+                    break
 
-                # 무음 필터링: 유효한 오디오 신호만 큐에 추가
-                has_signal = self.streaming_voice_service.has_audio_signal(audio_data)
-                if has_signal:
-                    await self.audio_queue.put(audio_data)
+                if message["type"] != "websocket.receive":
+                    continue
+
+                should_stop = await self._process_websocket_message(message)
+                if should_stop:
+                    break
 
         except WebSocketDisconnect:
-            pass
+            self._websocket_closed = True
         finally:
             self.is_streaming = False
             await self.audio_queue.put(None)
+
+    async def _process_websocket_message(self, message: MutableMapping[str, Any]) -> bool:
+        """
+        WebSocket 메시지를 처리합니다.
+
+        Returns:
+            True if should stop receiving, False otherwise
+        """
+        # 오디오 바이너리 데이터 처리
+        if "bytes" in message and message["bytes"]:
+            await self._handle_audio_data(message["bytes"])
+            return False
+
+        # JSON 텍스트 메시지 처리
+        if "text" in message and message["text"]:
+            return self._handle_text_message(message["text"])
+
+        return False
+
+    async def _handle_audio_data(self, audio_data: bytes) -> None:
+        """오디오 데이터를 처리하고 큐에 추가합니다."""
+        self.audio_chunks.append(audio_data)
+
+        if self.streaming_voice_service.has_audio_signal(audio_data):
+            await self.audio_queue.put(audio_data)
+
+    def _handle_text_message(self, text: str) -> bool:
+        """
+        텍스트 메시지를 처리합니다.
+
+        Returns:
+            True if stop signal received, False otherwise
+        """
+        try:
+            data = json.loads(text)
+            if data.get("type") == "stop":
+                logger.info(f"Stop signal received: session_id={self.session_id}")
+                return True
+        except json.JSONDecodeError:
+            logger.debug(f"Invalid JSON message received: {text[:100]}")
+        return False
 
     async def _send_results(self) -> None:
         """
@@ -138,13 +181,17 @@ class VoiceStreamConsumer:
                 language=self.language,
                 sample_rate=self.sample_rate,
             ):
-                # STT 결과 전송
-                await self.websocket.send_json(result.model_dump())
-
                 # Final result 저장
                 if result.is_final:
                     self.final_transcript = result.text
                     self.final_confidence = result.confidence or 0.0
+
+                # STT 결과 전송 (WebSocket이 열려있을 때만)
+                if not self._websocket_closed:
+                    try:
+                        await self.websocket.send_json(result.model_dump())
+                    except Exception:
+                        self._websocket_closed = True
         except Exception as e:
             logger.error(
                 f"❌ 음성 인식 에러 - session_id={self.session_id}, error={e}",
@@ -192,8 +239,11 @@ class VoiceStreamConsumer:
 
         if audio_path and self.final_transcript:
             voice_session = await self._create_voice_session(audio_path)
-            if voice_session:
+            if voice_session and not self._websocket_closed:
                 await self._send_session_created_notification()
+        elif not self._websocket_closed:
+            # No speech detected - send empty result
+            await self._send_no_speech_notification()
 
         await self._close_websocket()
 
@@ -265,6 +315,9 @@ class VoiceStreamConsumer:
 
     async def _send_session_created_notification(self) -> None:
         """클라이언트에게 session_id를 전송합니다."""
+        if self._websocket_closed:
+            return
+
         try:
             await self.websocket.send_json(
                 {
@@ -275,7 +328,24 @@ class VoiceStreamConsumer:
                 }
             )
         except Exception as e:
+            self._websocket_closed = True
             logger.warning(f"Failed to send session created notification: {e}")
+
+    async def _send_no_speech_notification(self) -> None:
+        """음성이 감지되지 않았음을 클라이언트에게 알립니다."""
+        if self._websocket_closed:
+            return
+
+        try:
+            await self.websocket.send_json(
+                {
+                    "type": "no_speech",
+                    "message": "음성이 감지되지 않았습니다",
+                }
+            )
+        except Exception as e:
+            self._websocket_closed = True
+            logger.warning(f"Failed to send no speech notification: {e}")
 
     async def _send_error(self, error_message: str) -> None:
         """
@@ -284,13 +354,21 @@ class VoiceStreamConsumer:
         Args:
             error_message: 에러 메시지
         """
+        if self._websocket_closed:
+            return
+
         try:
             await self.websocket.send_json({"error": error_message})
         except Exception as e:
+            self._websocket_closed = True
             logger.warning(f"Failed to send error message: {e}")
 
     async def _close_websocket(self) -> None:
         """WebSocket 연결을 종료합니다."""
+        if self._websocket_closed:
+            return
+
+        self._websocket_closed = True
         try:
             await self.websocket.close()
         except Exception as e:

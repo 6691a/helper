@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport">
+    <title>Voice Input</title>
+    <link href="/static/css/voice-input.css" rel="stylesheet">
+</head>
+<body>
+<div class="overlay" id="overlay">
+    <div class="popup" id="popup">
+        <div class="handle"></div>
+
+        <div class="error-message" id="errorMessage"></div>
+
+        <div class="status" id="status">
+            <span class="status-dot" id="statusDot"></span>
+            <span id="statusText">마이크 버튼을 눌러 시작하세요</span>
+        </div>
+
+        <div class="visualizer" id="visualizer">
+            <!-- Bars will be added by JS -->
+        </div>
+
+        <div class="text-area-container">
+                <textarea
+                        class="text-area"
+                        id="textArea"
+                        placeholder="음성이 여기에 텍스트로 표시됩니다..."
+                ></textarea>
+        </div>
+
+        <div class="buttons">
+            <button class="btn btn-cancel" id="btnCancel">취소</button>
+            <button class="btn btn-mic" id="btnMic">
+                <svg fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+                    <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+                </svg>
+            </button>
+            <button class="btn btn-submit" disabled id="btnSubmit">제출</button>
+        </div>
+    </div>
+</div>
+
+<script src="/static/js/voice-input.js"></script>
+</body>
+</html>
