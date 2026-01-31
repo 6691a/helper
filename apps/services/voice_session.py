@@ -19,6 +19,7 @@ class VoiceSessionService:
         audio_path: str,
         stt_text: str,
         stt_confidence: float,
+        session_id: UUID | None = None,
     ) -> VoiceSession:
         """VoiceSession을 생성합니다."""
         voice_session = VoiceSession(
@@ -27,6 +28,8 @@ class VoiceSessionService:
             stt_text=stt_text,
             stt_confidence=stt_confidence,
         )
+        if session_id:
+            voice_session.session_id = session_id
 
         saved_session = await self.repository.create(voice_session)
 

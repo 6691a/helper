@@ -17,6 +17,7 @@ from apps.schemas.assistant import (
 )
 from apps.schemas.memory import MemoryResponse, MemorySearchResult
 from apps.schemas.reminder import ReminderResponse
+from apps.types.ai_log import AILogStep
 from apps.types.assistant import (
     AssistantConfig,
     IntentClassification,
@@ -24,6 +25,7 @@ from apps.types.assistant import (
     ParsedMemory,
     ReminderInfo,
 )
+from apps.utils.log import ai_log
 from apps.utils.reminder_calculator import ReminderCalculator
 
 logger = logging.getLogger(__name__)
@@ -133,7 +135,7 @@ weekday 값 (frequency=weekly일 때):
             )
         return self._embeddings
 
-    async def process(self, text: str, user_id: int | None) -> AssistantResponse:
+    async def process(self, text: str, user_id: int) -> AssistantResponse:
         """
         사용자 입력을 처리합니다.
 
@@ -141,7 +143,7 @@ weekday 값 (frequency=weekly일 때):
         2. save면 파싱 후 저장
         3. query면 벡터 검색 후 답변 생성
         """
-        intent_result = await self._classify_intent(text)
+        intent_result = await self._classify_intent(text, user_id)
 
         if intent_result.intent == IntentType.SAVE:
             save_result = await self._handle_save(text, user_id)
@@ -163,7 +165,8 @@ weekday 값 (frequency=weekly일 때):
                 ),
             )
 
-    async def _classify_intent(self, text: str) -> IntentClassification:
+    @ai_log(step=AILogStep.INTENT_CLASSIFICATION)
+    async def _classify_intent(self, text: str, user_id: int) -> IntentClassification:
         """의도를 분류합니다 (with_structured_output 사용)."""
         structured_llm = self.llm.with_structured_output(IntentClassification)
 
@@ -183,9 +186,9 @@ weekday 값 (frequency=weekly일 때):
 
         return IntentClassification(intent=IntentType.UNKNOWN, reason=_("Classification failed"))
 
-    async def _handle_save(self, text: str, user_id: int | None) -> AssistantSaveResponse:
+    async def _handle_save(self, text: str, user_id: int) -> AssistantSaveResponse:
         """정보를 파싱하고 저장합니다."""
-        parsed = await self._parse_text(text)
+        parsed = await self._parse_text(text, user_id)
         embedding = await self.embeddings.aembed_query(text)
         saved_memory = await self._save_memory(parsed, text, embedding, user_id)
 
@@ -214,7 +217,7 @@ weekday 값 (frequency=weekly일 때):
         parsed: ParsedMemory,
         original_text: str,
         embedding: list[float],
-        user_id: int | None,
+        user_id: int,
     ) -> Memory:
         """Memory를 저장합니다."""
         memory = Memory(
@@ -232,7 +235,7 @@ weekday 값 (frequency=weekly일 때):
         self,
         reminder_info: ReminderInfo | None,
         memory_id: int,
-        user_id: int | None,
+        user_id: int,
     ) -> Reminder | None:
         """Reminder를 저장합니다."""
         if reminder_info is None:
@@ -264,7 +267,8 @@ weekday 값 (frequency=weekly일 때):
             message += " " + _("Reminder has also been set.")
         return message
 
-    async def _parse_text(self, text: str) -> ParsedMemory:
+    @ai_log(step=AILogStep.TEXT_PARSING)
+    async def _parse_text(self, text: str, user_id: int) -> ParsedMemory:
         """텍스트에서 정보를 추출합니다 (with_structured_output 사용)."""
         structured_llm = self.llm.with_structured_output(ParsedMemory)
 
@@ -292,7 +296,7 @@ weekday 값 (frequency=weekly일 때):
             metadata=None,
         )
 
-    async def _handle_query(self, text: str, user_id: int | None) -> AssistantQueryResponse:
+    async def _handle_query(self, text: str, user_id: int) -> AssistantQueryResponse:
         """질문에 답변합니다."""
         # 1. 쿼리 임베딩 생성
         embedding = await self.embeddings.aembed_query(text)

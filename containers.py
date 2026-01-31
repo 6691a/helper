@@ -2,6 +2,7 @@ from dependency_injector import containers, providers
 
 from apps.auth import SessionAuthBackend
 from apps.cache import RedisCache
+from apps.repositories.ai_log import AIProcessingLogRepository
 from apps.repositories.conversation import ConversationRepository
 from apps.repositories.memory import MemoryRepository
 from apps.repositories.reminder import ReminderRepository
@@ -131,6 +132,11 @@ class Container(containers.DeclarativeContainer):
 
     conversation_repository = providers.Factory(
         ConversationRepository,
+        database=database,
+    )
+
+    ai_log_repository = providers.Factory(
+        AIProcessingLogRepository,
         database=database,
     )
 

@@ -306,6 +306,7 @@ class VoiceStreamConsumer:
                 audio_path=audio_path,
                 stt_text=self.final_transcript,
                 stt_confidence=self.final_confidence,
+                session_id=self.session_id,
             )
             return saved_session
 

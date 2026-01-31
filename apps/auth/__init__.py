@@ -40,9 +40,13 @@ class SessionAuthBackend(AuthenticationBackend):
         if auth_header and auth_header.startswith("Bearer "):
             token = auth_header.replace("Bearer ", "")
 
-        # 2. 쿠키에서 토큰 확인 (WebSocket 지원)
+        # 2. 쿠키에서 토큰 확인
         if not token:
             token = conn.cookies.get("token")
+
+        # 3. 쿼리 파라미터에서 토큰 확인 (WebSocket/WebView 지원)
+        if not token:
+            token = conn.query_params.get("token")
 
         # 토큰이 없으면 인증 실패
         if not token:

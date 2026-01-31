@@ -3,6 +3,7 @@ const config = {
     theme: 'dark',
     lang: 'ko-KR',
     apiBase: '',
+    token: '',
     sampleRate: 16000
 };
 
@@ -11,6 +12,7 @@ const urlParams = new URLSearchParams(window.location.search);
 config.theme = urlParams.get('theme') || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
 config.lang = urlParams.get('lang') || 'ko-KR';
 config.apiBase = urlParams.get('api_base') || window.location.origin;
+config.token = urlParams.get('token') || '';
 
 // Apply theme
 document.documentElement.setAttribute('data-theme', config.theme);
@@ -126,7 +128,8 @@ function checkSilenceTimeout() {
 function connectWebSocket() {
     const wsProtocol = config.apiBase.startsWith('https') ? 'wss' : 'ws';
     const wsBase = config.apiBase.replace(/^https?/, wsProtocol);
-    const wsUrl = `${wsBase}/api/v1/voice/stream?language=${config.lang}&sample_rate=${config.sampleRate}`;
+    const tokenParam = config.token ? `&token=${encodeURIComponent(config.token)}` : '';
+    const wsUrl = `${wsBase}/api/v1/voice/stream?language=${config.lang}&sample_rate=${config.sampleRate}${tokenParam}`;
 
     websocket = new WebSocket(wsUrl);
 

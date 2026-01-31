@@ -2,6 +2,7 @@ from datetime import date, datetime
 from datetime import time as _time
 from typing import TYPE_CHECKING
 
+from sqlalchemy import DateTime
 from sqlmodel import Field, Relationship
 
 from apps.models import Memory
@@ -36,7 +37,11 @@ class Reminder(BaseModel, table=True):
     time: _time = Field(default=_time(9, 0), nullable=False)
 
     # 다음 실행 시각 (Celery Beat 스케줄링용)
-    next_run_at: datetime | None = Field(default=None, index=True)
+    next_run_at: datetime | None = Field(  # type: ignore[call-overload]
+        default=None,
+        sa_type=DateTime(timezone=True),
+        index=True,
+    )
 
     # 상태
     status: ReminderStatus = Field(default=ReminderStatus.ACTIVE, nullable=False, index=True)

@@ -1,13 +1,13 @@
 from typing import cast
 from urllib.parse import urlparse
 
+from authlib.integrations.starlette_client import OAuth, OAuthError
 from fastapi import Request
 from starlette.responses import RedirectResponse
-from authlib.integrations.starlette_client import OAuth, OAuthError
 
 from apps.exceptions import AppException
 from apps.i18n import _
-from apps.types.social import SocialProvider, Social, SocialUserInfo
+from apps.types.social import Social, SocialProvider, SocialUserInfo
 
 
 class SocialAuthService:
@@ -40,9 +40,7 @@ class SocialAuthService:
     def _get_redirect_uri(self, provider: SocialProvider) -> str:
         return f"{self.redirect_uri_base}/api/v1/auth/{provider.value}/callback"
 
-    async def redirect_login(
-        self, request: Request, provider: SocialProvider
-    ) -> RedirectResponse:
+    async def redirect_login(self, request: Request, provider: SocialProvider) -> RedirectResponse:
         provider_client = getattr(self.oauth, provider.value)
         redirect_uri = self._get_redirect_uri(provider)
         return cast(
@@ -50,9 +48,7 @@ class SocialAuthService:
             await provider_client.authorize_redirect(request, redirect_uri),
         )
 
-    async def handle_callback(
-        self, request: Request, provider: SocialProvider
-    ) -> SocialUserInfo:
+    async def handle_callback(self, request: Request, provider: SocialProvider) -> SocialUserInfo:
         """OAuth 콜백을 처리하고 사용자 정보를 반환합니다."""
         provider_client = getattr(self.oauth, provider.value)
 

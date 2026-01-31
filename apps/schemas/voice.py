@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from fastapi import UploadFile, File, Form
+from fastapi import File, Form, UploadFile
 from pydantic import BaseModel, Field
 
 from apps.types.voice import LanguageCode
@@ -23,9 +23,7 @@ class TranscribeResponse(BaseModel):
 
     text: str = Field(description="인식된 텍스트")
     language: LanguageCode = Field(description="사용된 언어 코드")
-    confidence: float | None = Field(
-        default=None, description="인식 신뢰도 (0.0 ~ 1.0)"
-    )
+    confidence: float | None = Field(default=None, description="인식 신뢰도 (0.0 ~ 1.0)")
 
 
 class TranscribeSegment(BaseModel):
@@ -38,9 +36,7 @@ class TranscribeSegment(BaseModel):
 class TranscribeDetailedResponse(TranscribeResponse):
     """상세 음성 인식 응답 (세그먼트 포함)"""
 
-    segments: list[TranscribeSegment] = Field(
-        default_factory=list, description="인식 세그먼트 목록"
-    )
+    segments: list[TranscribeSegment] = Field(default_factory=list, description="인식 세그먼트 목록")
 
 
 class StreamingTranscribeResponse(BaseModel):

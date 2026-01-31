@@ -2,8 +2,7 @@ from sqlalchemy import desc
 from sqlmodel import col, select
 
 from apps.models.conversation import Conversation
-from apps.models.memory import Memory
-from apps.models.reminder import Reminder
+from apps.models.links import ConversationMemoryLink, ConversationReminderLink
 from database import Database
 
 
@@ -53,19 +52,27 @@ class ConversationRepository:
             session.add(conversation)
             await session.flush()
 
-            # Memory 연결
-            if memory_ids:
-                stmt = select(Memory).where(col(Memory.id).in_(memory_ids))
-                result = await session.execute(stmt)
-                memories = list(result.scalars().all())
-                conversation.memories.extend(memories)
+            conversation_id = conversation.id
+            if conversation_id is None:
+                raise ValueError("Conversation ID should not be None after flush")
 
-            # Reminder 연결
+            # Memory 연결 (Link 테이블 직접 사용)
+            if memory_ids:
+                for memory_id in memory_ids:
+                    memory_link = ConversationMemoryLink(
+                        conversation_id=conversation_id,
+                        memory_id=memory_id,
+                    )
+                    session.add(memory_link)
+
+            # Reminder 연결 (Link 테이블 직접 사용)
             if reminder_ids:
-                reminder_stmt = select(Reminder).where(col(Reminder.id).in_(reminder_ids))
-                reminder_result = await session.execute(reminder_stmt)
-                reminders = list(reminder_result.scalars().all())
-                conversation.reminders.extend(reminders)
+                for reminder_id in reminder_ids:
+                    reminder_link = ConversationReminderLink(
+                        conversation_id=conversation_id,
+                        reminder_id=reminder_id,
+                    )
+                    session.add(reminder_link)
 
             await session.flush()
             await session.refresh(conversation)

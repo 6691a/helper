@@ -12,6 +12,7 @@ from apps.services.assistant import AssistantService
 from apps.services.voice_session import VoiceSessionService
 from apps.types.assistant import IntentType
 from apps.types.conversation import ExtractedConversationData, Intent
+from database import transactional
 
 logger = logging.getLogger(__name__)
 
@@ -29,8 +30,9 @@ class ConversationService:
         self.conversation_repository = conversation_repository
         self.assistant_service = assistant_service
 
+    @transactional
     async def process_voice(self, request: ProcessVoiceRequest, user_id: int) -> ConversationResponse:
-        """음성 세션을 처리하여 대화 기록을 생성합니다."""
+        """음성 세션을 처리하여 대화 기록을 생성합니다. (트랜잭션 적용)"""
         voice_session = await self._get_voice_session(request.session_id, user_id)
         final_text = self._determine_final_text(request.text, voice_session)
         await self._update_voice_session_confirmation(voice_session, final_text)
@@ -96,7 +98,7 @@ class ConversationService:
                     reminder_ids = [assistant_response.save_result.reminder.id]
                 assistant_text = assistant_response.save_result.message
                 parsed_data = {
-                    "type": assistant_response.save_result.memory.type,
+                    "type": assistant_response.save_result.memory.type.value,
                     "keywords": assistant_response.save_result.memory.keywords,
                     "content": assistant_response.save_result.memory.content,
                     "metadata": assistant_response.save_result.memory.metadata_,
@@ -134,7 +136,7 @@ class ConversationService:
         conversation = Conversation(
             voice_session_id=voice_session_id,
             user_id=user_id,
-            intent=intent,
+            intent=intent.model_dump(mode="json"),
             parsed_data=parsed_data,
             assistant_response=assistant_text,
         )
