@@ -397,5 +397,13 @@ window.setText = setText;
 
 // Auto-open popup on load (can be disabled via URL param)
 if (urlParams.get('auto_open') !== 'false') {
+    // 즉시 열기 시도
     openPopup();
+
+    // iOS WebView 호환성을 위해 지연 후 다시 시도
+    setTimeout(() => {
+        if (!overlay.classList.contains('active')) {
+            openPopup();
+        }
+    }, 100);
 }

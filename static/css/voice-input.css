@@ -32,28 +32,44 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
 }
 
-body {
+html, body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background: transparent;
-    min-height: 100vh;
+    background: #1a1a1a; /* fallback for iOS WebView */
+    background: var(--bg-popup);
+    background-color: var(--bg-popup);
+    height: 100%;
     overflow: hidden;
 }
 
+/* Light theme fallback for body */
+[data-theme="light"] body,
+body[data-theme="light"] {
+    background: #ffffff;
+    background-color: #ffffff;
+}
+
 .overlay {
-    position: fixed;
+    position: absolute;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    background: var(--bg-overlay);
+    width: 100%;
+    height: 100%;
+    background: var(--bg-popup);
     display: flex;
-    align-items: flex-end;
-    justify-content: center;
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.3s ease, visibility 0.3s ease;
+    flex-direction: column;
+    justify-content: flex-start;
+    opacity: 1;
+    visibility: visible;
+    /* iOS WebView fix */
+    -webkit-overflow-scrolling: touch;
 }
 
 .overlay.active {
@@ -63,25 +79,22 @@ body {
 
 .popup {
     width: 100%;
-    max-width: 500px;
+    height: 100%;
+    flex: 1;
     background: var(--bg-popup);
-    border-radius: 20px 20px 0 0;
-    padding: 20px;
-    padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
-    transform: translateY(100%);
-    transition: transform 0.3s ease;
+    padding: 16px;
+    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 }
 
-.overlay.active .popup {
-    transform: translateY(0);
+.handle-area {
+    display: none;
 }
 
 .handle {
-    width: 40px;
-    height: 4px;
-    background: var(--border);
-    border-radius: 2px;
-    margin: 0 auto 16px;
+    display: none;
 }
 
 .status {
@@ -129,9 +142,9 @@ body {
 
 .text-area {
     width: 100%;
-    min-height: 120px;
-    max-height: 200px;
-    padding: 16px;
+    flex: 1;
+    min-height: 80px;
+    padding: 12px;
     background: var(--bg-input);
     border: 1px solid var(--border);
     border-radius: 12px;
@@ -167,6 +180,11 @@ body {
     font-weight: 600;
     cursor: pointer;
     transition: background 0.2s ease, transform 0.1s ease;
+    /* Android 버튼 하이라이트 제거 */
+    -webkit-tap-highlight-color: transparent;
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
 }
 
 .btn:active {

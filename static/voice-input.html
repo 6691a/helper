@@ -4,12 +4,33 @@
     <meta charset="UTF-8">
     <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport">
     <title>Voice Input</title>
+    <script>
+        // Apply theme and critical styles immediately before anything renders
+        (function () {
+            var params = new URLSearchParams(window.location.search);
+            var theme = params.get('theme') || 'dark';
+            var bgColor = theme === 'light' ? '#ffffff' : '#1a1a1a';
+
+            // Set theme attribute
+            document.documentElement.setAttribute('data-theme', theme);
+            document.documentElement.style.backgroundColor = bgColor;
+
+            // Inject critical CSS with correct theme colors
+            var style = document.createElement('style');
+            style.textContent =
+                'html, body { margin: 0; padding: 0; min-height: 100vh; background-color: ' + bgColor + '; }' +
+                '.overlay, .popup { background-color: ' + bgColor + '; }';
+            document.head.appendChild(style);
+        })();
+    </script>
     <link href="/static/css/voice-input.css" rel="stylesheet">
 </head>
 <body>
 <div class="overlay" id="overlay">
     <div class="popup" id="popup">
-        <div class="handle"></div>
+        <div class="handle-area" id="handleArea">
+            <div class="handle"></div>
+        </div>
 
         <div class="error-message" id="errorMessage"></div>
 
