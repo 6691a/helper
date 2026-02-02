@@ -1,0 +1,43 @@
+{
+  "name": "helper-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Helper - 가정용 물품 관리 및 AI 음성 비서 애플리케이션",
+  "workspaces": [
+    "frontend"
+  ],
+  "scripts": {
+    "frontend": "npm --prefix frontend",
+    "frontend:start": "npm --prefix frontend run start",
+    "frontend:ios": "npm --prefix frontend run ios",
+    "frontend:android": "npm --prefix frontend run android",
+    "frontend:lint": "npm --prefix frontend run lint",
+    "backend:dev": "cd backend && just dev",
+    "backend:up": "cd backend && just up",
+    "backend:down": "cd backend && just down",
+    "backend:migrate": "cd backend && just migrate",
+    "lint": "npm run lint:backend && npm run lint:frontend",
+    "lint:backend": "cd backend && uv run ruff check .",
+    "lint:frontend": "npm --prefix frontend run lint",
+    "prepare": "husky || true"
+  },
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^15.2.10"
+  },
+  "lint-staged": {
+    "backend/**/*.py": [
+      "cd backend && uv run ruff check --fix",
+      "cd backend && uv run ruff format"
+    ],
+    "frontend/**/*.{js,jsx,ts,tsx}": [
+      "npm --prefix frontend run lint -- --fix"
+    ],
+    "frontend/**/*.{js,jsx,ts,tsx,json,css,md}": [
+      "npx prettier --write"
+    ]
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

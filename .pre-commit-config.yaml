@@ -1,19 +1,74 @@
+# Monorepo Pre-commit Configuration
+# 각 프로젝트별로 다른 훅을 적용합니다.
+
+default_language_version:
+  python: python3.13
+
 ci:
-  skip: [mypy]
+  skip: [mypy, eslint-frontend]
 
 repos:
+  # ============================================
+  # 공통 훅 (전체 프로젝트)
+  # ============================================
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-json
+      - id: check-added-large-files
+        args: ['--maxkb=1000']
+      - id: check-merge-conflict
+      - id: detect-private-key
+
+  # ============================================
+  # 커밋 메시지 컨벤션 (Conventional Commits - 대문자)
+  # ============================================
+  - repo: https://github.com/compilerla/conventional-pre-commit
+    rev: v4.0.0
+    hooks:
+      - id: conventional-pre-commit
+        stages: [commit-msg]
+        args: [Feat, Fix, Docs, Style, Refactor, Perf, Test, Build, CI, Chore, Revert]
+
+  # ============================================
+  # Backend (Python) - backend/ 디렉토리만 적용
+  # ============================================
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.14.11
     hooks:
       - id: ruff
         args: [--fix]
+        files: ^backend/
       - id: ruff-format
+        files: ^backend/
 
   - repo: local
     hooks:
       - id: mypy
-        name: mypy check
-        entry: uv run mypy .
+        name: mypy check (backend)
+        entry: bash -c 'cd backend && uv run mypy .'
         language: system
         types: [python]
+        files: ^backend/
         pass_filenames: false
+
+  # ============================================
+  # Frontend (TypeScript/React Native) - frontend/ 디렉토리만 적용
+  # ============================================
+  - repo: local
+    hooks:
+      - id: eslint-frontend
+        name: eslint (frontend)
+        entry: bash -c 'cd frontend && npm run lint -- --fix'
+        language: system
+        files: ^frontend/.*\.(js|jsx|ts|tsx)$
+        pass_filenames: false
+
+      - id: prettier-frontend
+        name: prettier (frontend)
+        entry: bash -c 'cd frontend && npx prettier --write'
+        language: system
+        files: ^frontend/.*\.(js|jsx|ts|tsx|json|css|md)$

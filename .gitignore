@@ -1,3 +1,21 @@
+# ===========================================
+# Helper Monorepo - Root .gitignore
+# ===========================================
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE (root level)
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# ===========================================
+# Backend (Python)
+# ===========================================
 # Python
 __pycache__/
 *.py[cod]
@@ -25,20 +43,9 @@ wheels/
 venv/
 ENV/
 
-# IDE
-.idea/
-.vscode/
-*.swp
-*.swo
-*~
-
 # Environment files (contains secrets)
-env/*.yaml
-!env/*.example.yaml
-
-# OS
-.DS_Store
-Thumbs.db
+backend/env/*.yaml
+!backend/env/*.example.yaml
 
 # Testing
 .pytest_cache/
@@ -53,4 +60,52 @@ htmlcov/
 # Ruff
 .ruff_cache/
 
-recordings/
+# Recordings
+backend/recordings/
+
+# ===========================================
+# Frontend (React Native / Expo)
+# ===========================================
+# Dependencies
+node_modules/
+
+# Expo
+.expo/
+web-build/
+
+# Native
+.kotlin/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# Metro
+.metro-health-check*
+
+# Debug
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# Local env files
+.env*.local
+
+# TypeScript
+*.tsbuildinfo
+
+# Generated native folders
+frontend/ios/
+frontend/android/
+
+# ===========================================
+# Secrets & Credentials (전체)
+# ===========================================
+*.pem
+.env
+.env.local
+.env.*.local
+credentials.json
+service-account*.json

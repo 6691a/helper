@@ -1,170 +1,154 @@
 # CLAUDE.md
 
-FastAPI + SQLModel 기반 홈 인벤토리 관리 및 AI 음성 비서 애플리케이션
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Project Overview
+
+Helper - 가정용 물품 관리 및 AI 음성 비서 애플리케이션 (모노레포)
+
+## Repository Structure
+
+```
+helper/
+├── backend/     # FastAPI + SQLModel API 서버
+└── frontend/    # Expo React Native 앱 (file-based routing)
+```
 
 ## Development Commands
 
+### Backend (Python/FastAPI)
+
 ```bash
-# Install dependencies
-uv sync
+cd backend
 
-# Run development server
-uv run fastapi dev main.py
+# Dependencies & Infrastructure
+uv sync                          # Install dependencies
+just up                          # Start PostgreSQL + Redis (Docker)
+just down                        # Stop infrastructure
+just down-v                      # Stop + delete volumes
 
-# Database migrations
-uv run alembic upgrade head
-uv run alembic revision --autogenerate -m "description"
+# Development
+just dev                         # Run FastAPI dev server
+just start                       # Infrastructure + dev server
 
-# Code quality
+# Database
+just migrate                     # Apply migrations
+just makemigrations "message"    # Create migration
+
+# Background Tasks
+just celery-dev                  # Celery worker + beat (dev)
+
+# Code Quality
+pre-commit run --all-files
 uv run ruff check --fix .
 uv run mypy .
 ```
 
-## Tech Stack
+### Frontend (Expo/React Native)
 
-- **Python 3.13+**, FastAPI, SQLModel (SQLAlchemy + Pydantic)
-- **PostgreSQL** with asyncpg, **Alembic** for migrations
-- **Redis** for session/cache, **Celery** for background tasks
-- **Google Gemini** for AI, **Google Cloud Speech-to-Text** for STT
-- **uv** for package management, **Ruff** for linting/formatting
+```bash
+cd frontend
+
+npm install                      # Install dependencies
+npx expo start                   # Start Expo dev server
+npm run ios                      # iOS simulator
+npm run android                  # Android emulator
+npm run lint                     # ESLint
+```
 
 ## Architecture
 
+### Backend
+
+- **Stack:** Python 3.13+, FastAPI, SQLModel, PostgreSQL, Redis, Celery
+- **AI:** Google Gemini (LLM), Google Cloud Speech-to-Text
+- **Package Manager:** uv, just (task runner)
+
+계층 구조: Controller → Service → Repository → Model
+
+상세 가이드라인은 `backend/.claude/CLAUDE.md` 참조.
+
+### Frontend
+
+- **Stack:** Expo SDK 54, React Native 0.81, React 19, TypeScript
+- **Routing:** expo-router (file-based routing)
+- **Navigation:** @react-navigation/bottom-tabs
+
 ```
-apps/
-├── controllers/    # API endpoints (FastAPI routers)
-├── services/       # Business logic
-├── repositories/   # Database access layer
-├── models/         # SQLModel ORM models
-├── schemas/        # Pydantic request/response schemas
-├── types/          # Enums, dataclasses, type definitions
-├── i18n/           # Internationalization (gettext)
-└── utils/          # Utility functions
-```
-
-**계층 구조:** Controller → Service → Repository → Model
-
-## Type Design
-
-### Enum 사용 (문자열 대신)
-
-```python
-# apps/types/*.py에 정의
-class ReminderStatus(str, Enum):
-    ACTIVE = "active"
-    PAUSED = "paused"
-
-# ✅ 사용
-status: ReminderStatus = ReminderStatus.ACTIVE
-
-# ❌ 피하기
-status: str = "active"
+frontend/
+├── app/                 # File-based routes (expo-router)
+│   ├── (tabs)/          # Tab navigator screens
+│   └── _layout.tsx      # Root layout
+├── components/          # Reusable components
+│   └── ui/              # UI primitives
+├── constants/           # Theme, colors, fonts
+└── hooks/               # Custom hooks
 ```
 
-### 날짜/시간 타입
+## Local Services
 
-```python
-from datetime import date, time, datetime
+| Service    | Host      | Port  | Credentials      |
+|------------|-----------|-------|------------------|
+| PostgreSQL | localhost | 45432 | helper/helper/helper |
+| Redis      | localhost | 46379 | -                |
 
-specific_date: date | None        # YYYY-MM-DD
-reminder_time: time               # HH:MM:SS
-next_run_at: datetime | None      # YYYY-MM-DD HH:MM:SS (timezone-aware)
+## Key Conventions
+
+- **Backend:** Enum 사용, 단수형 테이블명, mypy strict 모드
+- **Frontend:** Path aliases (`@/components`, `@/hooks` 등)
+
+## Git & Commit Convention
+
+### 초기 설정
+
+```bash
+# 루트에서 의존성 설치 (husky, lint-staged)
+npm install
+
+# pre-commit 설치 (Python 훅용)
+pip install pre-commit
+pre-commit install
+pre-commit install --hook-type commit-msg
 ```
 
-## Database Guidelines
+### Conventional Commits
 
-### 테이블 명명: 단수형
+커밋 메시지는 다음 형식을 따릅니다:
 
-```python
-class User(BaseModel, table=True):
-    __tablename__ = "user"  # NOT "users"
-
-user_id: int = Field(foreign_key="user.id")  # NOT "users.id"
+```
+type(scope): message
 ```
 
-### 모델 등록 필수
+**Type (대문자):**
+- `Feat` - 새로운 기능
+- `Fix` - 버그 수정
+- `Docs` - 문서 변경
+- `Style` - 코드 포맷팅 (기능 변경 없음)
+- `Refactor` - 리팩토링
+- `Perf` - 성능 개선
+- `Test` - 테스트 추가/수정
+- `Build` - 빌드 시스템/의존성 변경
+- `CI` - CI 설정 변경
+- `Chore` - 기타 변경
 
-새 모델은 `apps/models/__init__.py`에 import 필수. 안 하면 Alembic 인식 실패.
+**Scope (선택):** `frontend`, `backend`
 
-### Many-to-Many 관계
-
-```python
-# Link Model - SQLModel 직접 상속 (BaseModel 아님)
-class ConversationMemoryLink(SQLModel, table=True):
-    __tablename__ = "conversation_memory_link"
-    conversation_id: int = Field(foreign_key="conversation.id", primary_key=True)
-    memory_id: int = Field(foreign_key="memory.id", primary_key=True)
-
-# 양쪽 모델
-class Conversation(BaseModel, table=True):
-    memories: list[Memory] = Relationship(
-        back_populates="conversations",
-        link_model=ConversationMemoryLink
-    )
+**예시:**
+```bash
+git commit -m "Feat(frontend): add user profile screen"
+git commit -m "Fix(backend): resolve database connection issue"
+git commit -m "Docs: update README"
 ```
 
-Link 모델도 `apps/models/__init__.py`에 import 필수.
+### Pre-commit Hooks
 
-## Code Quality
+커밋 시 자동으로 실행되는 검사:
+- **공통:** trailing whitespace, YAML/JSON 검증, 대용량 파일 검사
+- **Backend:** ruff (lint + format), mypy
+- **Frontend:** ESLint, Prettier
 
-### 함수 분리 원칙
+## Claude Code 지침
 
-- 50줄 이상이면 분리 고려
-- 한 함수는 하나의 책임만
-- Private 메서드: `_`로 시작 (예: `_get_`, `_create_`, `_validate_`)
+### 파일 수정 시 Edit 도구 사용
 
-```python
-# ✅ 메인 흐름만 명확하게
-async def process_voice(self, request, user_id):
-    voice_session = await self._get_voice_session(request.session_id, user_id)
-    final_text = self._determine_final_text(request.text, voice_session)
-    extracted = self._extract_result_data(assistant_response)
-    conversation = await self._create_conversation_record(...)
-    return ConversationResponse(...)
-```
-
-## Mypy Strict
-
-프로젝트는 `mypy --strict` 사용.
-
-### Optional 값 Narrowing
-
-```python
-# ✅ 올바른 방법
-saved_memory = await self.repository.create(memory)
-memory_id = saved_memory.id
-if memory_id is None:
-    raise ValueError("Memory ID should not be None after creation")
-await self._save_reminder(reminder_info, memory_id, user_id)
-
-# ❌ 피하기
-assert saved_memory.id is not None  # 프로덕션에서 무시될 수 있음
-```
-
-### 타입 파라미터 명시
-
-```python
-# ✅
-parsed_data: dict[str, Any] = {}
-tasks: list[asyncio.Task[Any]] = []
-
-# ❌
-parsed_data: dict = {}  # Missing type parameters
-```
-
-### 복잡한 반환값은 Dataclass
-
-3개 이상 반환값은 `apps/types/`에 dataclass 정의.
-
-```python
-@dataclass
-class ExtractedConversationData:
-    intent: Intent
-    assistant_text: str
-    parsed_data: dict[str, Any]
-    memory_ids: list[int]
-    reminder_ids: list[int]
-
-def _extract_result_data(...) -> ExtractedConversationData:
-    return ExtractedConversationData(...)
-```
+파일을 수정할 때는 IDE에서 변경 내역(diff)을 확인할 수 있도록 `Edit` 도구를 사용합니다. `mcp__jetbrains__replace_text_in_file` 도구는 사용하지 않습니다.
