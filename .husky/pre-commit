@@ -1,2 +1,0 @@
-# lint-staged 실행 (변경된 파일만 검사)
-npx lint-staged
