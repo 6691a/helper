@@ -24,5 +24,6 @@ class SocialUserInfo(BaseModel):
 
 class SocialConfig(BaseModel):
     redirect_uri_base: str
-    allowed_redirect_hosts: list[str]
+    allowed_redirect_schemes: list[str]  # 커스텀 스킴 (helper, exp 등)
+    allowed_redirect_hosts: list[str]  # 웹 호스트 (localhost:8000 등)
     providers: list[Social]

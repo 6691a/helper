@@ -1,12 +1,11 @@
-import { Tabs, router } from "expo-router";
+import {router, Tabs} from "expo-router";
 import React from "react";
-import { StyleSheet, View, Pressable, Platform } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import {Platform, Pressable, StyleSheet, View} from "react-native";
+import {useSafeAreaInsets} from "react-native-safe-area-context";
 
-import { HapticTab } from "@/components/haptic-tab";
-import { IconSymbol } from "@/components/ui/icon-symbol";
-import { Colors } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
+import {IconSymbol} from "@/components/ui/icon-symbol";
+import {Colors} from "@/constants/theme";
+import {useColorScheme} from "@/hooks/use-color-scheme";
 
 function RecordTabButton() {
   return (
@@ -36,7 +35,6 @@ export default function TabLayout() {
       screenOptions={{
         tabBarActiveTintColor: Colors[colorScheme ?? "light"].tint,
         headerShown: false,
-        tabBarButton: HapticTab,
         tabBarStyle: {
           paddingTop: 8,
           paddingBottom: bottomPadding,

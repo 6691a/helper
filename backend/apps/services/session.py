@@ -9,6 +9,7 @@ from apps.types.redis import RedisConfig
 class SessionService:
     SESSION_PREFIX = "session:"
     AUTH_CODE_PREFIX = "auth_code:"
+    OAUTH_STATE_PREFIX = "oauth_state:"
 
     def __init__(
         self,
@@ -71,3 +72,17 @@ class SessionService:
             return None
         await self.redis.delete(key)
         return AuthCodeData.model_validate_json(data)
+
+    async def store_oauth_state(self, state: str, redirect_uri: str) -> None:
+        """OAuth state와 redirect_uri를 Redis에 저장합니다."""
+        key = f"{self.OAUTH_STATE_PREFIX}{state}"
+        # 5분간 유효 (OAuth 플로우 완료 시간)
+        await self.redis.set(key, redirect_uri, ex=300)
+
+    async def get_oauth_redirect_uri(self, state: str) -> str | None:
+        """OAuth state로 redirect_uri를 조회하고 삭제합니다."""
+        key = f"{self.OAUTH_STATE_PREFIX}{state}"
+        redirect_uri = await self.redis.get(key)
+        if redirect_uri:
+            await self.redis.delete(key)
+        return redirect_uri

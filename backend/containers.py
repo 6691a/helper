@@ -74,7 +74,9 @@ class Container(containers.DeclarativeContainer):
             config.social.providers,
         ),
         redirect_uri_base=config.social.redirect_uri_base,
+        allowed_redirect_schemes=config.social.allowed_redirect_schemes,
         allowed_redirect_hosts=config.social.allowed_redirect_hosts,
+        session_service=session_service,
     )
 
     auth_backend = providers.Singleton(

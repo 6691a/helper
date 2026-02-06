@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 from starlette.authentication import requires
 from starlette.responses import RedirectResponse
 
-from apps.schemas.auth import AuthResponse, SignupRequest
+from apps.schemas.auth import AuthResponse, SignupRequest, UserResponse
 from apps.schemas.common import Response, ResponseProvider
 from apps.services.auth import AuthService
 from apps.services.social import SocialAuthService
@@ -33,8 +33,8 @@ async def social_login(
 ) -> RedirectResponse:
     """소셜 로그인 페이지로 리다이렉트합니다."""
     social_auth_service.validate_redirect_uri(redirect_uri)
-    request.session["redirect_uri"] = redirect_uri
-    return await social_auth_service.redirect_login(request, provider)
+    # State를 Redis에 저장하고 OAuth 시작
+    return await social_auth_service.redirect_login(request, provider, redirect_uri)
 
 
 @router.get("/{provider}/callback")
@@ -52,12 +52,11 @@ async def social_callback(
     ],
 ) -> RedirectResponse:
     """OAuth 콜백을 처리하고 앱으로 리다이렉트합니다."""
-    user_info = await social_auth_service.handle_callback(request, provider)
+    user_info, redirect_uri = await social_auth_service.handle_callback(request, provider)
     is_new_user, token_or_code = await auth_service.login_or_prepare_signup(user_info)
 
-    redirect_uri = request.session.pop("redirect_uri", None)
     if not redirect_uri:
-        raise ValueError("redirect_uri not found in session.")
+        raise ValueError("redirect_uri not found.")
 
     if is_new_user:
         params = urlencode({"auth_code": token_or_code, "is_new_user": "true"})
@@ -82,6 +81,29 @@ async def signup(
         nickname=body.nickname,
     )
     return ResponseProvider.created(AuthResponse(session_token=session_token))
+
+
+@router.get("/me", response_model=Response[UserResponse])
+@requires("authenticated")
+@inject
+async def get_current_user(
+    request: Request,
+    auth_service: Annotated[
+        AuthService,
+        Depends(Provide[Container.auth_service]),
+    ],
+) -> JSONResponse:
+    """현재 로그인한 사용자 정보를 조회합니다."""
+    token = request.headers.get("Authorization", "").replace("Bearer ", "")
+    user = await auth_service.get_current_user(token)
+    return ResponseProvider.success(
+        UserResponse(
+            id=user.id if user.id else 0,
+            email=user.email,
+            nickname=user.nickname,
+            profile_image=user.profile_image,
+        )
+    )
 
 
 @router.post("/logout", response_model=Response[None])
