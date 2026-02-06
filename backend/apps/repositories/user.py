@@ -21,9 +21,7 @@ class UserRepository:
             result = await session.execute(stmt)
             return result.scalar_one_or_none()
 
-    async def get_by_social(
-        self, provider: SocialProvider, social_id: str
-    ) -> User | None:
+    async def get_by_social(self, provider: SocialProvider, social_id: str) -> User | None:
         """소셜 로그인 정보로 사용자를 조회합니다."""
         async with self.database.session() as session:
             stmt = select(User).where(

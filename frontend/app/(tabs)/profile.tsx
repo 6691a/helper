@@ -1,15 +1,15 @@
-import {Alert, Pressable, StyleSheet, Text} from "react-native";
+import { Alert, Pressable, StyleSheet, Text } from "react-native";
 
-import {ThemedView} from "@/components/themed-view";
-import {UserInfoCard} from "@/components/user-info-card";
-import {useAuth} from "@/contexts/auth-context";
+import { ThemedView } from "@/components/themed-view";
+import { UserInfoCard } from "@/components/user-info-card";
+import { useAuth } from "@/contexts/auth-context";
 
 export default function ProfileScreen() {
-  const {logout} = useAuth();
+  const { logout } = useAuth();
 
   const handleLogout = () => {
     Alert.alert("로그아웃", "로그아웃 하시겠습니까?", [
-      {text: "취소", style: "cancel"},
+      { text: "취소", style: "cancel" },
       {
         text: "로그아웃",
         style: "destructive",
@@ -22,7 +22,7 @@ export default function ProfileScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <UserInfoCard/>
+      <UserInfoCard />
 
       <Pressable style={styles.logoutButton} onPress={handleLogout}>
         <Text style={styles.logoutButtonText}>로그아웃</Text>

@@ -16,9 +16,7 @@ class AuthService:
         self.user_repository = user_repository
         self.session_service = session_service
 
-    async def login_or_prepare_signup(
-        self, user_info: SocialUserInfo
-    ) -> tuple[bool, str]:
+    async def login_or_prepare_signup(self, user_info: SocialUserInfo) -> tuple[bool, str]:
         """
         소셜 로그인 정보로 로그인하거나 회원가입을 준비합니다.
 
@@ -27,9 +25,7 @@ class AuthService:
             - 기존 사용자: (False, session_token)
             - 신규 사용자: (True, auth_code)
         """
-        user = await self.user_repository.get_by_social(
-            user_info.provider, user_info.social_id
-        )
+        user = await self.user_repository.get_by_social(user_info.provider, user_info.social_id)
 
         if user and user.id:
             session_token = await self.session_service.create_session(user.id)

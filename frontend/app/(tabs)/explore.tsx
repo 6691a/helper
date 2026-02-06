@@ -1,13 +1,13 @@
-import {StyleSheet} from "react-native";
+import { StyleSheet } from "react-native";
 
-import {ThemedText} from "@/components/themed-text";
-import {ThemedView} from "@/components/themed-view";
+import { ThemedText } from "@/components/themed-text";
+import { ThemedView } from "@/components/themed-view";
 
 export default function TabTwoScreen() {
   return (
-      <ThemedView>
-        <ThemedText>HI</ThemedText>
-      </ThemedView>
+    <ThemedView>
+      <ThemedText>HI</ThemedText>
+    </ThemedView>
   );
 }
 

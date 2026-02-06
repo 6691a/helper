@@ -11,9 +11,7 @@ class MemoryCreate(BaseModel):
     type: MemoryType = Field(description="정보 유형")
     keywords: str = Field(description="검색용 키워드 (쉼표 구분)")
     content: str = Field(description="AI가 정리한 핵심 내용")
-    metadata_: dict[str, Any] | None = Field(
-        default=None, description="유형별 추가 정보"
-    )
+    metadata_: dict[str, Any] | None = Field(default=None, description="유형별 추가 정보")
     original_text: str = Field(description="원본 입력 텍스트")
 
 

@@ -10,9 +10,7 @@ RequestResponseEndpoint = Callable[[Request], Awaitable[Response]]
 
 
 class I18nMiddleware(BaseHTTPMiddleware):
-    async def dispatch(
-        self, request: Request, call_next: RequestResponseEndpoint
-    ) -> Response:
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         accept_language = request.headers.get("Accept-Language")
         locale = parse_accept_language(accept_language)
         set_locale(locale)

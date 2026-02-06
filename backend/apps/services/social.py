@@ -66,9 +66,7 @@ class SocialAuthService:
             await provider_client.authorize_redirect(request, redirect_uri, state=state),
         )
 
-    async def handle_callback(
-        self, request: Request, provider: SocialProvider
-    ) -> tuple[SocialUserInfo, str | None]:
+    async def handle_callback(self, request: Request, provider: SocialProvider) -> tuple[SocialUserInfo, str | None]:
         """OAuth 콜백을 처리하고 사용자 정보 및 redirect_uri를 반환합니다."""
         provider_client = getattr(self.oauth, provider.value)
 

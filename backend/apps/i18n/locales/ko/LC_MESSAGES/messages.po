@@ -101,4 +101,3 @@ msgstr "파일이 너무 큽니다: {:.1f}MB. 최대: {}MB"
 #, python-brace-format
 msgid "Speech recognition failed: {}"
 msgstr "음성 인식 실패: {}"
-

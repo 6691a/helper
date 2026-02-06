@@ -101,4 +101,3 @@ msgstr ""
 #, python-brace-format
 msgid "Speech recognition failed: {}"
 msgstr ""
-

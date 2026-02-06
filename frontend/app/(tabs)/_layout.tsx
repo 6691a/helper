@@ -1,11 +1,11 @@
-import {router, Tabs} from "expo-router";
+import { router, Tabs } from "expo-router";
 import React from "react";
-import {Platform, Pressable, StyleSheet, View} from "react-native";
-import {useSafeAreaInsets} from "react-native-safe-area-context";
+import { Platform, Pressable, StyleSheet, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import {IconSymbol} from "@/components/ui/icon-symbol";
-import {Colors} from "@/constants/theme";
-import {useColorScheme} from "@/hooks/use-color-scheme";
+import { IconSymbol } from "@/components/ui/icon-symbol";
+import { Colors } from "@/constants/theme";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 
 function RecordTabButton() {
   return (

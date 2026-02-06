@@ -82,7 +82,7 @@ class SessionService:
     async def get_oauth_redirect_uri(self, state: str) -> str | None:
         """OAuth state로 redirect_uri를 조회하고 삭제합니다."""
         key = f"{self.OAUTH_STATE_PREFIX}{state}"
-        redirect_uri = await self.redis.get(key)
+        redirect_uri: str | None = await self.redis.get(key)
         if redirect_uri:
             await self.redis.delete(key)
         return redirect_uri
