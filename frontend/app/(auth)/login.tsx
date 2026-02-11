@@ -6,6 +6,8 @@ import { useGoogleLogin } from "@/hooks/use-google-login";
 import { useAuth } from "@/contexts/auth-context";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { secureStorage } from "@/lib/secure-storage";
+import { authApi } from "@/services/api/auth";
 
 export default function LoginScreen() {
   const { startOAuthFlow, isLoading, error } = useGoogleLogin();
@@ -22,14 +24,17 @@ export default function LoginScreen() {
       // Navigate to signup screen
       router.push("/(auth)/signup");
     } else if (!result.is_new_user && result.session_token) {
-      // Existing user - login
-      await login(result.session_token, {
-        id: 0, // Placeholder - backend should return user data
-        email: result.email || "",
-        nickname: result.nickname || "",
-        profile_image: result.profile_image || null,
-      });
-      router.replace("/(tabs)");
+      // Existing user - store token and fetch user data
+      await secureStorage.setSessionToken(result.session_token);
+
+      try {
+        const userData = await authApi.getCurrentUser();
+        await login(result.session_token, userData);
+        router.replace("/(tabs)");
+      } catch (error) {
+        console.error("[Login] Failed to fetch user data:", error);
+        await secureStorage.clearAll();
+      }
     }
   };
 

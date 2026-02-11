@@ -67,21 +67,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const token = await secureStorage.getSessionToken();
 
         if (token) {
-          // Validate token with server by fetching current user
+          // First, load cached user data for fast UI
+          const cachedUserData = await secureStorage.getUserData();
+          if (cachedUserData) {
+            try {
+              const cachedUser = JSON.parse(cachedUserData);
+              dispatch({
+                type: "RESTORE_SESSION",
+                payload: cachedUser,
+              });
+            } catch (parseError) {
+              console.error(
+                "[Auth] Failed to parse cached user data:",
+                parseError,
+              );
+            }
+          }
+
+          // Then validate token and refresh user data in background
           try {
             const user = await authApi.getCurrentUser();
-
-            // Update stored user data with latest from server
             await secureStorage.setUserData(JSON.stringify(user));
-
             dispatch({
-              type: "RESTORE_SESSION",
+              type: "SET_USER",
               payload: user,
             });
             return;
           } catch (error) {
             // Token is invalid, clear all stored data
             await secureStorage.clearAll();
+            dispatch({ type: "LOGOUT" });
+            return;
           }
         }
       } catch (error) {

@@ -99,14 +99,14 @@ export default function SignupScreen() {
       // Clear auth code
       await secureStorage.removeAuthCode();
 
-      // Login with new session token
-      // Note: Backend should ideally return user data along with session_token
-      await login(response.session_token, {
-        id: 0, // Placeholder
-        email: "",
-        nickname: nickname.trim(),
-        profile_image: profileImage,
-      });
+      // Store session token first
+      await secureStorage.setSessionToken(response.session_token);
+
+      // Fetch actual user data from server
+      const userData = await authApi.getCurrentUser();
+
+      // Login with actual user data
+      await login(response.session_token, userData);
 
       router.replace("/(tabs)");
     } catch (err) {

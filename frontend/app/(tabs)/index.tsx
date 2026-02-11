@@ -1,5 +1,4 @@
 import { ScrollView, StyleSheet, View } from "react-native";
-import { UserInfoCard } from "@/components/user-info-card";
 import { useThemeColor } from "@/hooks/use-theme-color";
 
 export default function HomeScreen() {
@@ -7,10 +6,7 @@ export default function HomeScreen() {
 
   return (
     <ScrollView style={[styles.container, { backgroundColor }]}>
-      <View style={styles.content}>
-        <UserInfoCard />
-        {/* Add more content here */}
-      </View>
+      <View style={styles.content}>{/* Add more content here */}</View>
     </ScrollView>
   );
 }
