@@ -18,6 +18,7 @@ export interface AuthResponse {
 export interface SignupRequest {
   auth_code: string;
   nickname: string;
+  profile_image?: string | null;
 }
 
 export interface ApiError {

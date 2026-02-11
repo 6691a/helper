@@ -79,6 +79,7 @@ async def signup(
     session_token = await auth_service.signup(
         auth_code=body.auth_code,
         nickname=body.nickname,
+        profile_image=body.profile_image,
     )
     return ResponseProvider.created(AuthResponse(session_token=session_token))
 

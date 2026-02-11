@@ -61,6 +61,12 @@ class SocialAuthService:
         state = secrets.token_urlsafe(32)
         await self.session_service.store_oauth_state(state, app_redirect_uri)
 
+        # Debug log
+        import logging
+
+        logging.info(f"OAuth redirect_uri: {redirect_uri}")
+        logging.info(f"redirect_uri_base: {self.redirect_uri_base}")
+
         return cast(
             RedirectResponse,
             await provider_client.authorize_redirect(request, redirect_uri, state=state),
