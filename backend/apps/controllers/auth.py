@@ -20,21 +20,64 @@ router = APIRouter(
 )
 
 
-@router.get("/{provider}")
-@inject
-async def social_login(
-    provider: SocialProvider,
+@router.get("/me", response_model=Response[UserResponse])
+@requires("authenticated")
+async def get_current_user(
     request: Request,
-    redirect_uri: str,
-    social_auth_service: Annotated[
-        SocialAuthService,
-        Depends(Provide[Container.social_auth_service]),
+) -> JSONResponse:
+    """현재 로그인한 사용자 정보를 조회합니다."""
+    user = request.user.user
+    return ResponseProvider.success(
+        UserResponse(
+            id=user.id,
+            email=user.email,
+            nickname=user.nickname,
+            profile_image=user.profile_image,
+        )
+    )
+
+
+@router.post("/logout", response_model=Response[None])
+@inject
+async def logout(
+    request: Request,
+    auth_service: Annotated[
+        AuthService,
+        Depends(Provide[Container.auth_service]),
     ],
-) -> RedirectResponse:
-    """소셜 로그인 페이지로 리다이렉트합니다."""
-    social_auth_service.validate_redirect_uri(redirect_uri)
-    # State를 Redis에 저장하고 OAuth 시작
-    return await social_auth_service.redirect_login(request, provider, redirect_uri)
+) -> JSONResponse:
+    """로그아웃합니다."""
+    token = request.headers.get("Authorization", "").replace("Bearer ", "")
+    if token:
+        try:
+            await auth_service.logout(token)
+        except Exception:
+            # 토큰이 이미 만료되었거나 유효하지 않아도 로그아웃 성공 처리
+            pass
+    return ResponseProvider.success(None)
+
+
+@router.post("/signup", response_model=Response[AuthResponse], status_code=201)
+@inject
+async def signup(
+    body: SignupRequest,
+    auth_service: Annotated[
+        AuthService,
+        Depends(Provide[Container.auth_service]),
+    ],
+) -> JSONResponse:
+    """회원가입을 완료합니다."""
+    session_token = await auth_service.signup(
+        auth_code=body.auth_code,
+        nickname=body.nickname,
+        profile_image=body.profile_image,
+    )
+    return ResponseProvider.created(AuthResponse(session_token=session_token))
+
+
+# ==============================
+# Path parameter routes last
+# ==============================
 
 
 @router.get("/{provider}/callback")
@@ -66,58 +109,18 @@ async def social_callback(
     return RedirectResponse(url=f"{redirect_uri}?{params}")
 
 
-@router.post("/signup", response_model=Response[AuthResponse], status_code=201)
+@router.get("/{provider}")
 @inject
-async def signup(
-    body: SignupRequest,
-    auth_service: Annotated[
-        AuthService,
-        Depends(Provide[Container.auth_service]),
-    ],
-) -> JSONResponse:
-    """회원가입을 완료합니다."""
-    session_token = await auth_service.signup(
-        auth_code=body.auth_code,
-        nickname=body.nickname,
-        profile_image=body.profile_image,
-    )
-    return ResponseProvider.created(AuthResponse(session_token=session_token))
-
-
-@router.get("/me", response_model=Response[UserResponse])
-@requires("authenticated")
-@inject
-async def get_current_user(
+async def social_login(
+    provider: SocialProvider,
     request: Request,
-    auth_service: Annotated[
-        AuthService,
-        Depends(Provide[Container.auth_service]),
+    redirect_uri: str,
+    social_auth_service: Annotated[
+        SocialAuthService,
+        Depends(Provide[Container.social_auth_service]),
     ],
-) -> JSONResponse:
-    """현재 로그인한 사용자 정보를 조회합니다."""
-    token = request.headers.get("Authorization", "").replace("Bearer ", "")
-    user = await auth_service.get_current_user(token)
-    return ResponseProvider.success(
-        UserResponse(
-            id=user.id if user.id else 0,
-            email=user.email,
-            nickname=user.nickname,
-            profile_image=user.profile_image,
-        )
-    )
-
-
-@router.post("/logout", response_model=Response[None])
-@requires("authenticated")
-@inject
-async def logout(
-    request: Request,
-    auth_service: Annotated[
-        AuthService,
-        Depends(Provide[Container.auth_service]),
-    ],
-) -> JSONResponse:
-    """로그아웃합니다."""
-    token = request.headers.get("Authorization", "").replace("Bearer ", "")
-    await auth_service.logout(token)
-    return ResponseProvider.success(None)
+) -> RedirectResponse:
+    """소셜 로그인 페이지로 리다이렉트합니다."""
+    social_auth_service.validate_redirect_uri(redirect_uri)
+    # State를 Redis에 저장하고 OAuth 시작
+    return await social_auth_service.redirect_login(request, provider, redirect_uri)
