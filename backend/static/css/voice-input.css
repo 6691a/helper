@@ -40,18 +40,10 @@
 
 html, body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background: #1a1a1a; /* fallback for iOS WebView */
+    /* 배경색은 HTML의 인라인 스타일에서 처리 */
     background: var(--bg-popup);
-    background-color: var(--bg-popup);
     height: 100%;
     overflow: hidden;
-}
-
-/* Light theme fallback for body */
-[data-theme="light"] body,
-body[data-theme="light"] {
-    background: #ffffff;
-    background-color: #ffffff;
 }
 
 .overlay {

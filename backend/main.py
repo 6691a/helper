@@ -6,6 +6,9 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.openapi.utils import get_openapi
 from fastapi.staticfiles import StaticFiles
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
 from starlette.middleware.authentication import AuthenticationMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 
@@ -25,11 +28,13 @@ logging.basicConfig(
 
 container = Container()
 container.config.from_pydantic(settings=Settings, required=True)
+limiter = Limiter(key_func=get_remote_address, storage_uri=Settings.redis.url)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.container = container
+    app.state.limiter = limiter
     yield
 
 
@@ -71,6 +76,8 @@ app.add_middleware(AuthenticationMiddleware, backend=container.auth_backend())
 app.add_middleware(I18nMiddleware)
 
 exception_handlers(app)
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
 
 for router in routers:
     app.include_router(router)

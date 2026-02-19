@@ -1,6 +1,7 @@
-import { Alert, Pressable, StyleSheet, Text } from "react-native";
+import { Alert, Pressable, StyleSheet } from "react-native";
 
 import { ThemedView } from "@/components/themed-view";
+import { ThemedText } from "@/components/themed-text";
 import { UserInfoCard } from "@/components/user-info-card";
 import { useAuth } from "@/contexts/auth-context";
 
@@ -25,7 +26,7 @@ export default function ProfileScreen() {
       <UserInfoCard />
 
       <Pressable style={styles.logoutButton} onPress={handleLogout}>
-        <Text style={styles.logoutButtonText}>로그아웃</Text>
+        <ThemedText style={styles.logoutButtonText}>로그아웃</ThemedText>
       </Pressable>
     </ThemedView>
   );

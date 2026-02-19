@@ -15,10 +15,12 @@ import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { router } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import { ThemedText } from "@/components/themed-text";
-import { BackButton } from "@/components/back-button";
+import { ScreenHeader } from "@/components/screen-header";
 import { authApi } from "@/services/api/auth";
 import { useAuth } from "@/contexts/auth-context";
 import { secureStorage } from "@/lib/secure-storage";
+import { useThemeColor } from "@/hooks/use-theme-color";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 
 export default function SignupScreen() {
   const [nickname, setNickname] = useState("");
@@ -28,6 +30,23 @@ export default function SignupScreen() {
   const [error, setError] = useState<string | null>(null);
   const { login } = useAuth();
   const nicknameInputRef = useRef<TextInput>(null);
+
+  const colorScheme = useColorScheme();
+  const backgroundColor = useThemeColor({}, "background");
+  const textColor = useThemeColor({}, "text");
+  const borderColor = useThemeColor(
+    { light: "#dadce0", dark: "#374151" },
+    "border",
+  );
+  const placeholderBg = useThemeColor(
+    { light: "#f3f4f6", dark: "#374151" },
+    "background",
+  );
+  const inputBg = useThemeColor(
+    { light: "#fff", dark: "#1f2937" },
+    "background",
+  );
+  const isDark = colorScheme === "dark";
 
   // Pre-load permissions on component mount
   useEffect(() => {
@@ -119,16 +138,15 @@ export default function SignupScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
-      <View style={styles.header}>
-        <BackButton />
-      </View>
+    <SafeAreaView
+      style={[styles.safeArea, { backgroundColor }]}
+      edges={["top", "bottom"]}
+    >
+      <ScreenHeader title="" />
       <KeyboardAwareScrollView
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
         bottomOffset={40}
-        enableOnAndroid={true}
-        enableAutomaticScroll={true}
         extraKeyboardSpace={20}
       >
         <ThemedText style={styles.title}>프로필 완성</ThemedText>
@@ -146,7 +164,12 @@ export default function SignupScreen() {
             disabled={isLoading || isPickingImage}
           >
             {isPickingImage ? (
-              <View style={styles.profileImagePlaceholder}>
+              <View
+                style={[
+                  styles.profileImagePlaceholder,
+                  { backgroundColor: placeholderBg, borderColor },
+                ]}
+              >
                 <ActivityIndicator size="large" color="#4a9eff" />
               </View>
             ) : profileImage ? (
@@ -155,8 +178,20 @@ export default function SignupScreen() {
                 style={styles.profileImage}
               />
             ) : (
-              <View style={styles.profileImagePlaceholder}>
-                <Text style={styles.profileImagePlaceholderText}>+</Text>
+              <View
+                style={[
+                  styles.profileImagePlaceholder,
+                  { backgroundColor: placeholderBg, borderColor },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.profileImagePlaceholderText,
+                    { color: textColor },
+                  ]}
+                >
+                  +
+                </Text>
               </View>
             )}
           </Pressable>
@@ -169,9 +204,12 @@ export default function SignupScreen() {
           <ThemedText style={styles.label}>닉네임</ThemedText>
           <TextInput
             ref={nicknameInputRef}
-            style={styles.input}
+            style={[
+              styles.input,
+              { borderColor, color: textColor, backgroundColor: inputBg },
+            ]}
             placeholder="닉네임을 입력하세요"
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor={isDark ? "#9CA3AF" : "#6B7280"}
             value={nickname}
             onChangeText={setNickname}
             maxLength={20}
@@ -217,18 +255,6 @@ export default function SignupScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#fff",
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: "#fff",
-  },
-  container: {
-    flex: 1,
-    backgroundColor: "#fff",
   },
   content: {
     flexGrow: 1,
@@ -242,12 +268,10 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     lineHeight: 40,
     marginBottom: 8,
-    color: "#11181C",
     textAlign: "center",
   },
   subtitle: {
     fontSize: 16,
-    color: "#687076",
     marginBottom: 32,
     textAlign: "center",
   },
@@ -272,22 +296,18 @@ const styles = StyleSheet.create({
   profileImagePlaceholder: {
     width: "100%",
     height: "100%",
-    backgroundColor: "#f3f4f6",
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 2,
-    borderColor: "#dadce0",
     borderRadius: 60,
   },
   profileImagePlaceholderText: {
     fontSize: 48,
     lineHeight: 48,
-    color: "#687076",
     includeFontPadding: false,
   },
   profileImageLabel: {
     fontSize: 14,
-    color: "#687076",
   },
   inputContainer: {
     marginBottom: 24,
@@ -295,22 +315,17 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#11181C",
     marginBottom: 8,
   },
   input: {
     borderWidth: 1,
-    borderColor: "#dadce0",
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
-    color: "#11181C",
-    backgroundColor: "#fff",
     minHeight: 44,
   },
   helperText: {
     fontSize: 12,
-    color: "#687076",
     marginTop: 4,
   },
   button: {

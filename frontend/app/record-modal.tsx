@@ -2,16 +2,17 @@ import { useRef, useState } from "react";
 import {
   StyleSheet,
   View,
-  useColorScheme,
   Platform,
   PermissionsAndroid,
   Alert,
   Dimensions,
+  ActivityIndicator,
 } from "react-native";
 import { WebView, WebViewMessageEvent } from "react-native-webview";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Modal from "react-native-modal";
+import { useTheme } from "@/contexts/theme-context";
 import { API_BASE } from "@/constants/config";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
@@ -19,10 +20,11 @@ const SHEET_HEIGHT = SCREEN_HEIGHT * 0.4;
 
 export default function RecordModal() {
   const webViewRef = useRef<WebView>(null);
-  const colorScheme = useColorScheme();
+  const { colorScheme } = useTheme();
   const theme = colorScheme === "dark" ? "dark" : "light";
   const insets = useSafeAreaInsets();
   const [isVisible, setIsVisible] = useState(true);
+  const [isWebViewReady, setIsWebViewReady] = useState(false);
 
   const handleClose = () => {
     setIsVisible(false);
@@ -34,64 +36,40 @@ export default function RecordModal() {
 
   const handleLoad = async () => {
     if (Platform.OS === "android") {
-      try {
-        const hasPermission = await PermissionsAndroid.check(
-          PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
-        );
+      const hasPermission = await PermissionsAndroid.check(
+        PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
+      );
 
-        if (!hasPermission) {
-          await PermissionsAndroid.request(
-            PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
-            {
-              title: "마이크 권한",
-              message: "음성 인식을 위해 마이크 접근이 필요합니다.",
-              buttonPositive: "허용",
-              buttonNegative: "거부",
-            },
-          );
-        }
-      } catch (err) {
-        console.warn("Permission error:", err);
+      if (!hasPermission) {
+        await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
+          {
+            title: "마이크 권한",
+            message: "음성 인식을 위해 마이크 접근이 필요합니다.",
+            buttonPositive: "허용",
+            buttonNegative: "거부",
+          },
+        );
       }
     }
   };
 
-  const handleError = (syntheticEvent: any) => {
-    const { nativeEvent } = syntheticEvent;
-    console.error("WebView error:", nativeEvent);
-  };
-
-  const handleHttpError = (syntheticEvent: any) => {
-    const { nativeEvent } = syntheticEvent;
-    console.error(
-      "WebView HTTP error:",
-      nativeEvent.statusCode,
-      nativeEvent.description,
-    );
-  };
-
   const handleContentProcessDidTerminate = () => {
-    console.error("WebView content process terminated");
     webViewRef.current?.reload();
   };
 
   const handleMessage = (event: WebViewMessageEvent) => {
     try {
       const data = JSON.parse(event.nativeEvent.data);
-      console.log("WebView message:", data);
 
       switch (data.type) {
         case "submit":
-          console.log("Submitted text:", data.text);
-          console.log("Session ID:", data.sessionId);
           router.back();
           break;
         case "cancel":
-          console.log("Recording cancelled");
           router.back();
           break;
         case "error":
-          console.error("Recording error:", data.message);
           if (data.message === "microphone_permission_denied") {
             Alert.alert(
               "권한 필요",
@@ -100,8 +78,8 @@ export default function RecordModal() {
           }
           break;
       }
-    } catch (e) {
-      console.error("Failed to parse WebView message:", e);
+    } catch {
+      // JSON 파싱 실패 시 무시
     }
   };
 
@@ -116,7 +94,8 @@ export default function RecordModal() {
       onModalHide={handleModalHide}
       swipeDirection="down"
       style={styles.modal}
-      backdropOpacity={0.5}
+      backdropOpacity={0.3}
+      backdropColor="#000"
       animationIn="slideInUp"
       animationOut="slideOutDown"
       animationInTiming={300}
@@ -130,7 +109,16 @@ export default function RecordModal() {
           { backgroundColor, paddingBottom: insets.bottom },
         ]}
       >
+        {!isWebViewReady && (
+          <View style={[styles.loadingContainer, { backgroundColor }]}>
+            <ActivityIndicator
+              size="large"
+              color={colorScheme === "dark" ? "#4a9eff" : "#007aff"}
+            />
+          </View>
+        )}
         <WebView
+          key={`webview-${theme}`}
           ref={webViewRef}
           source={{
             uri,
@@ -138,11 +126,11 @@ export default function RecordModal() {
               "ngrok-skip-browser-warning": "true",
             },
           }}
-          style={styles.webview}
+          style={[styles.webview, { opacity: isWebViewReady ? 1 : 0 }]}
+          backgroundColor={backgroundColor}
           onLoad={handleLoad}
+          onLoadEnd={() => setIsWebViewReady(true)}
           onMessage={handleMessage}
-          onError={handleError}
-          onHttpError={handleHttpError}
           onContentProcessDidTerminate={handleContentProcessDidTerminate}
           allowsInlineMediaPlayback
           mediaPlaybackRequiresUserAction={false}
@@ -176,5 +164,11 @@ const styles = StyleSheet.create({
   },
   webview: {
     flex: 1,
+  },
+  loadingContainer: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 1,
   },
 });

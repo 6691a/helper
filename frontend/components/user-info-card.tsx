@@ -6,6 +6,10 @@ import { useThemeColor } from "@/hooks/use-theme-color";
 export function UserInfoCard() {
   const { user } = useAuth();
   const textColor = useThemeColor({}, "text");
+  const iconColor = useThemeColor(
+    { light: "#9CA3AF", dark: "#6B7280" },
+    "icon",
+  );
 
   if (!user) {
     return null;
@@ -27,7 +31,7 @@ export function UserInfoCard() {
         <Image source={{ uri: user.profile_image }} style={styles.avatar} />
       ) : (
         <View style={styles.avatarPlaceholder}>
-          <Ionicons name="person-circle" size={100} color="#9CA3AF" />
+          <Ionicons name="person-circle" size={100} color={iconColor} />
         </View>
       )}
 

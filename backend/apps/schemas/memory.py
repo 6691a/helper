@@ -33,8 +33,8 @@ class MemoryResponse(BaseModel):
     content: str = Field(description="핵심 내용")
     metadata_: dict[str, Any] | None = Field(default=None, description="추가 정보")
     original_text: str = Field(description="원본 입력 텍스트")
-
-    model_config = {"from_attributes": True}
+    created_at: str = Field(description="생성 시간 (사용자 시간대 기준)")
+    updated_at: str = Field(description="수정 시간 (사용자 시간대 기준)")
 
 
 class MemorySearchResult(BaseModel):

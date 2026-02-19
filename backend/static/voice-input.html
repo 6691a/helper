@@ -3,24 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport">
+    <meta name="color-scheme" content="dark light">
+    <meta name="theme-color" content="#1a1a1a" media="(prefers-color-scheme: dark)">
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
     <title>Voice Input</title>
+    <style>
+        /* Critical CSS - 깜빡임 방지를 위해 최우선 적용 */
+        html, body {
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            background-color: #1a1a1a; /* 기본 다크 테마 */
+        }
+
+        html[data-theme="light"], html[data-theme="light"] body {
+            background-color: #ffffff;
+        }
+
+        .overlay, .popup {
+            background-color: #1a1a1a;
+        }
+
+        html[data-theme="light"] .overlay,
+        html[data-theme="light"] .popup {
+            background-color: #ffffff;
+        }
+    </style>
     <script>
-        // Apply theme and critical styles immediately before anything renders
+        // 테마 속성을 가능한 빨리 설정
         (function () {
             var params = new URLSearchParams(window.location.search);
             var theme = params.get('theme') || 'dark';
-            var bgColor = theme === 'light' ? '#ffffff' : '#1a1a1a';
-
-            // Set theme attribute
             document.documentElement.setAttribute('data-theme', theme);
-            document.documentElement.style.backgroundColor = bgColor;
-
-            // Inject critical CSS with correct theme colors
-            var style = document.createElement('style');
-            style.textContent =
-                'html, body { margin: 0; padding: 0; min-height: 100vh; background-color: ' + bgColor + '; }' +
-                '.overlay, .popup { background-color: ' + bgColor + '; }';
-            document.head.appendChild(style);
         })();
     </script>
     <link href="/static/css/voice-input.css" rel="stylesheet">

@@ -24,3 +24,22 @@ export interface SignupRequest {
 export interface ApiError {
   detail: string;
 }
+
+export enum MemoryType {
+  ITEM = "item",
+  PLACE = "place",
+  SCHEDULE = "schedule",
+  PERSON = "person",
+  MEMO = "memo",
+}
+
+export interface Memory {
+  id: number;
+  type: MemoryType;
+  keywords: string;
+  content: string;
+  metadata_: Record<string, unknown> | null;
+  original_text: string;
+  created_at: string;
+  updated_at: string;
+}

@@ -12,6 +12,7 @@ import { KeyboardProvider } from "react-native-keyboard-controller";
 
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { AuthProvider, useAuth } from "@/contexts/auth-context";
+import { ThemeProvider as CustomThemeProvider } from "@/contexts/theme-context";
 
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
@@ -32,7 +33,7 @@ function RootLayoutNav() {
       // Redirect to tabs if authenticated but still in auth group
       router.replace("/(tabs)");
     }
-  }, [isAuthenticated, isLoading, segments]);
+  }, [isAuthenticated, isLoading, router, segments]);
 
   // Show loading screen while checking auth
   if (isLoading) {
@@ -43,9 +44,18 @@ function RootLayoutNav() {
     );
   }
 
+  const theme = colorScheme === "dark" ? DarkTheme : DefaultTheme;
+
   return (
-    <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-      <Stack screenOptions={{ headerShown: false }}>
+    <ThemeProvider value={theme}>
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          contentStyle: {
+            backgroundColor: theme.colors.background,
+          },
+        }}
+      >
         <Stack.Screen name="(auth)" />
         <Stack.Screen name="(tabs)" />
         <Stack.Screen
@@ -53,6 +63,14 @@ function RootLayoutNav() {
           options={{
             presentation: "transparentModal",
             animation: "none",
+            contentStyle: { backgroundColor: "transparent" },
+          }}
+        />
+        <Stack.Screen
+          name="settings"
+          options={{
+            presentation: "card",
+            animation: "default",
           }}
         />
       </Stack>
@@ -64,9 +82,11 @@ function RootLayoutNav() {
 export default function RootLayout() {
   return (
     <KeyboardProvider>
-      <AuthProvider>
-        <RootLayoutNav />
-      </AuthProvider>
+      <CustomThemeProvider>
+        <AuthProvider>
+          <RootLayoutNav />
+        </AuthProvider>
+      </CustomThemeProvider>
     </KeyboardProvider>
   );
 }

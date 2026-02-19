@@ -2,7 +2,7 @@ from datetime import date, datetime
 from datetime import time as _time
 from typing import TYPE_CHECKING
 
-from sqlalchemy import DateTime
+from sqlalchemy import Column, DateTime, ForeignKey, Integer
 from sqlmodel import Field, Relationship
 
 from apps.models import Memory
@@ -18,8 +18,15 @@ if TYPE_CHECKING:
 class Reminder(BaseModel, table=True):
     """알림 스케줄 모델"""
 
-    # Memory 연결 (알림 대상 정보)
-    memory_id: int = Field(foreign_key="memory.id", nullable=False, index=True)
+    # Memory 연결 (알림 대상 정보) - CASCADE 삭제
+    memory_id: int = Field(
+        sa_column=Column(
+            Integer,
+            ForeignKey("memory.id", ondelete="CASCADE"),
+            nullable=False,
+            index=True,
+        )
+    )
     memory: "Memory" = Relationship()
     # 반복 주기
     frequency: ReminderFrequency = Field(nullable=False)

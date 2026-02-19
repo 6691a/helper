@@ -1,6 +1,7 @@
+from datetime import date
 from typing import Any
 
-from sqlalchemy import desc
+from sqlalchemy import desc, func
 from sqlmodel import col, select
 
 from apps.models.memory import Memory
@@ -97,6 +98,39 @@ class MemoryRepository:
             rows = result.all()
 
             return [(row[0], float(row[1])) for row in rows]
+
+    async def get_by_date(
+        self,
+        target_date: date,
+        user_id: int | None = None,
+        timezone: str = "UTC",
+        limit: int = 100,
+    ) -> list[Memory]:
+        """특정 날짜(사용자 시간대 기준)의 Memory 목록을 조회합니다."""
+        async with self.database.session() as session:
+            local_date_expr = func.date(func.timezone(timezone, col(Memory.created_at)))
+            stmt = select(Memory).where(local_date_expr == target_date)
+            if user_id is not None:
+                stmt = stmt.where(Memory.user_id == user_id)
+            stmt = stmt.order_by(desc(col(Memory.created_at))).limit(limit)
+            result = await session.execute(stmt)
+            return list(result.scalars().all())
+
+    async def get_calendar_marks(
+        self,
+        user_id: int | None = None,
+        timezone: str = "UTC",
+    ) -> dict[str, int]:
+        """메모리가 있는 날짜와 개수를 반환합니다 (캘린더 마킹용)."""
+        async with self.database.session() as session:
+            local_date_expr = func.date(func.timezone(timezone, col(Memory.created_at)))
+            stmt = select(local_date_expr, func.count(col(Memory.id)))
+            if user_id is not None:
+                stmt = stmt.where(Memory.user_id == user_id)
+            stmt = stmt.group_by(local_date_expr)
+            result = await session.execute(stmt)
+            rows = result.all()
+            return {str(row[0]): int(row[1]) for row in rows}
 
     async def search_by_keywords(
         self,

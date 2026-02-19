@@ -35,6 +35,7 @@ export default function TabLayout() {
       screenOptions={{
         tabBarActiveTintColor: Colors[colorScheme ?? "light"].tint,
         headerShown: false,
+        tabBarShowLabel: false,
         tabBarStyle: {
           paddingTop: 8,
           paddingBottom: bottomPadding,
@@ -54,9 +55,9 @@ export default function TabLayout() {
       <Tabs.Screen
         name="search"
         options={{
-          title: "Search",
+          title: "캘린더",
           tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="magnifyingglass" color={color} />
+            <IconSymbol size={28} name="calendar" color={color} />
           ),
         }}
       />
@@ -79,7 +80,20 @@ export default function TabLayout() {
       <Tabs.Screen
         name="profile"
         options={{
-          title: "Profile",
+          title: "프로필",
+          headerShown: true,
+          headerRight: () => (
+            <Pressable
+              onPress={() => router.push("/settings")}
+              style={{ marginRight: 16 }}
+            >
+              <IconSymbol
+                size={24}
+                name="gearshape.fill"
+                color={Colors[colorScheme ?? "light"].text}
+              />
+            </Pressable>
+          ),
           tabBarIcon: ({ color }) => (
             <IconSymbol size={28} name="person.fill" color={color} />
           ),

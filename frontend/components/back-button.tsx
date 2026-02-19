@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
+import { useThemeColor } from "@/hooks/use-theme-color";
 
 interface BackButtonProps {
   onPress?: () => void;
@@ -11,10 +12,16 @@ interface BackButtonProps {
 
 export function BackButton({
   onPress,
-  color = "#11181C",
+  color,
   size = 24,
   style,
 }: BackButtonProps) {
+  const defaultColor = useThemeColor({}, "text");
+  const pressedBg = useThemeColor(
+    { light: "#f3f4f6", dark: "#374151" },
+    "background",
+  );
+
   const handlePress = () => {
     if (onPress) {
       onPress();
@@ -27,12 +34,12 @@ export function BackButton({
     <Pressable
       style={({ pressed }) => [
         styles.backButton,
-        pressed && styles.backButtonPressed,
+        pressed && { backgroundColor: pressedBg },
         style,
       ]}
       onPress={handlePress}
     >
-      <Ionicons name="arrow-back" size={size} color={color} />
+      <Ionicons name="arrow-back" size={size} color={color || defaultColor} />
     </Pressable>
   );
 }
@@ -44,8 +51,5 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     justifyContent: "center",
     alignItems: "center",
-  },
-  backButtonPressed: {
-    backgroundColor: "#f3f4f6",
   },
 });
