@@ -1,5 +1,6 @@
 import logging
-from datetime import time as _time
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
@@ -74,11 +75,14 @@ metadata 예시:
 - person: {"name": "이름", "phone": "전화번호", "relation": "관계"}
 - memo: {"category": "분류"}
 
-reminder 추출 (알림 요청이 있을 때만):
-"알려줘", "리마인드", "잊지 않게" 등 알림 요청이 있으면 reminder를 추출하세요.
+reminder 추출:
+다음 중 하나라도 해당하면 reminder를 추출하세요.
+1. 명시적 요청: "알려줘", "리마인드", "잊지 않게" 등
+2. 날짜/시간 + 할 일: "내일 아침에 고구마 먹기", "3시에 약 먹기", "다음 주 월요일 회의" 등
+   → 특정 시점에 할 행동이 언급되면 자동으로 알림을 설정하세요.
 
 frequency 값:
-- once: 1회성 (특정 날짜, 예: "1월 25일에 알려줘")
+- once: 1회성 (특정 날짜, 예: "1월 25일에 알려줘", "내일 아침에")
 - daily: 매일 (예: "매일 아침 알려줘")
 - weekly: 매주 (예: "매주 월요일 알려줘")
 - monthly: 매월 (예: "매달 1일에 알려줘")
@@ -86,14 +90,30 @@ frequency 값:
 weekday 값 (frequency=weekly일 때):
 - monday, tuesday, wednesday, thursday, friday, saturday, sunday
 
+아침/저녁 시간 기준:
+- "아침" → 08:00
+- "점심" → 12:00
+- "저녁" → 19:00
+- "밤" → 21:00
+- 시간 언급 없으면 → 09:00
+
 예시:
-- "매주 월요일 알려줘" → frequency: weekly, weekday: monday
+- "내일 아침에 고구마 먹기" → frequency: once, specific_date: "YYYY-MM-DD"(내일), time: "08:00"
+- "3시에 약 먹기" → frequency: once, specific_date: "YYYY-MM-DD"(오늘), time: "15:00"
+- "매주 월요일 알려줘" → frequency: weekly, weekdays: ["monday"]
+- "매주 화요일 11시에 알려줘" → frequency: weekly, weekdays: ["tuesday"], time: "11:00"
 - "매달 15일에 알려줘" → frequency: monthly, day_of_month: 15
+- "매달 15일 오전 9시에 알려줘" → frequency: monthly, day_of_month: 15, time: "09:00"
 - "2025-02-14에 알려줘" → frequency: once, specific_date: "2025-02-14"
 - "매일 오전 9시에 알려줘" → frequency: daily, time: "09:00"
 - "다음 주 금요일 3시에" → frequency: once, specific_date: "YYYY-MM-DD", time: "15:00"
+- "매주 월화목에 알려줘" → frequency: weekly, weekdays: ["monday", "tuesday", "thursday"]
+- "매주 월요일 3시, 화목 17시에 알려줘" → 시간이 여러 개이면 가장 먼저 언급된 시간 하나만 사용:
+  time: "15:00", weekdays: ["monday", "tuesday", "thursday"]
 
-알림 요청이 없으면 reminder는 null로 두세요."""
+중요: 여러 요일은 weekdays 배열에 모두 담으세요. 하나의 reminder로 여러 요일을 지원합니다.
+시간은 단일 값만 저장합니다. 여러 시간이 언급되면 첫 번째 시간을 사용하세요.
+날짜/시간 언급이 전혀 없으면 reminder는 null로 두세요."""
 
     ANSWER_SYSTEM_PROMPT = """당신은 친절한 AI 비서입니다.
 사용자의 질문에 대해 검색된 관련 정보를 바탕으로 자연스럽게 답변하세요.
@@ -135,7 +155,7 @@ weekday 값 (frequency=weekly일 때):
             )
         return self._embeddings
 
-    async def process(self, text: str, user_id: int) -> AssistantResponse:
+    async def process(self, text: str, user_id: int, timezone: str = "Asia/Seoul") -> AssistantResponse:
         """
         사용자 입력을 처리합니다.
 
@@ -146,7 +166,7 @@ weekday 값 (frequency=weekly일 때):
         intent_result = await self._classify_intent(text, user_id)
 
         if intent_result.intent == IntentType.SAVE:
-            save_result = await self._handle_save(text, user_id)
+            save_result = await self._handle_save(text, user_id, timezone)
             return AssistantResponse(
                 intent=IntentType.SAVE,
                 save_result=save_result,
@@ -186,9 +206,9 @@ weekday 값 (frequency=weekly일 때):
 
         return IntentClassification(intent=IntentType.UNKNOWN, reason=_("Classification failed"))
 
-    async def _handle_save(self, text: str, user_id: int) -> AssistantSaveResponse:
+    async def _handle_save(self, text: str, user_id: int, timezone: str = "Asia/Seoul") -> AssistantSaveResponse:
         """정보를 파싱하고 저장합니다."""
-        parsed = await self._parse_text(text, user_id)
+        parsed = await self._parse_text(text, user_id, timezone)
         embedding = await self.embeddings.aembed_query(text)
         saved_memory = await self._save_memory(parsed, text, embedding, user_id)
 
@@ -196,21 +216,14 @@ weekday 값 (frequency=weekly일 때):
         if memory_id is None:
             raise ValueError("Memory ID should not be None after creation")
 
-        saved_reminder = await self._save_reminder(parsed.reminder, memory_id, user_id)
+        saved_reminder = await self._save_reminder(parsed.reminder, memory_id, user_id, timezone)
         message = self._build_save_message(parsed)
-        reminder_response = self._to_reminder_response(saved_reminder)
 
         return AssistantSaveResponse(
             message=message,
             memory=MemoryResponse.model_validate(saved_memory),
-            reminder=reminder_response,
+            reminder=self._to_reminder_response(saved_reminder),
         )
-
-    def _to_reminder_response(self, reminder: Reminder | None) -> ReminderResponse | None:
-        """Reminder를 ReminderResponse로 변환합니다."""
-        if reminder is None:
-            return None
-        return ReminderResponse.model_validate(reminder)
 
     async def _save_memory(
         self,
@@ -231,30 +244,37 @@ weekday 값 (frequency=weekly일 때):
         )
         return await self.memory_repository.create(memory)
 
+    def _to_reminder_response(self, reminder: Reminder | None) -> ReminderResponse | None:
+        """Reminder를 ReminderResponse로 변환합니다."""
+        if reminder is None:
+            return None
+        return ReminderResponse.model_validate(reminder)
+
     async def _save_reminder(
         self,
         reminder_info: ReminderInfo | None,
         memory_id: int,
         user_id: int,
+        timezone: str = "Asia/Seoul",
     ) -> Reminder | None:
         """Reminder를 저장합니다."""
         if reminder_info is None:
             return None
 
-        reminder_time = reminder_info.time or _time(9, 0)
         reminder = Reminder(
             memory_id=memory_id,
             frequency=reminder_info.frequency,
-            weekday=reminder_info.weekday,
+            weekdays=reminder_info.weekdays,
             day_of_month=reminder_info.day_of_month,
             specific_date=reminder_info.specific_date,
-            time=reminder_time,
-            next_run_at=ReminderCalculator.calculate_next_run_at(
+            time=reminder_info.time,
+            next_run_at=ReminderCalculator.calculate_next_run(
                 frequency=reminder_info.frequency,
-                reminder_time=reminder_time,
-                weekday=reminder_info.weekday,
+                time=reminder_info.time,
+                weekdays=reminder_info.weekdays,
                 day_of_month=reminder_info.day_of_month,
                 specific_date=reminder_info.specific_date,
+                timezone=timezone,
             ),
             user_id=user_id,
         )
@@ -268,12 +288,17 @@ weekday 값 (frequency=weekly일 때):
         return message
 
     @ai_log(step=AILogStep.TEXT_PARSING)
-    async def _parse_text(self, text: str, user_id: int) -> ParsedMemory:
+    async def _parse_text(self, text: str, user_id: int, timezone: str = "Asia/Seoul") -> ParsedMemory:
         """텍스트에서 정보를 추출합니다 (with_structured_output 사용)."""
         structured_llm = self.llm.with_structured_output(ParsedMemory)
 
+        tz = ZoneInfo(timezone)
+        now = datetime.now(tz)
+        current_datetime_str = now.strftime("%Y-%m-%d %H:%M (%A)")
+        system_prompt = self.PARSE_SYSTEM_PROMPT + f"\n\n현재 날짜/시간: {current_datetime_str}"
+
         messages = [
-            SystemMessage(content=self.PARSE_SYSTEM_PROMPT),
+            SystemMessage(content=system_prompt),
             HumanMessage(content=text),
         ]
 

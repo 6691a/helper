@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "178385319479",
+    "project_id": "helper-aec2d",
+    "storage_bucket": "helper-aec2d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:178385319479:android:46e941ac2104a2378c31b2",
+        "android_client_info": {
+          "package_name": "com.helper.helper_flutter"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAz4o7NI0Vh3SfAs6pbKz_Ei0vJ-grlwh4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

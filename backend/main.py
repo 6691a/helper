@@ -15,6 +15,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from apps.controllers import *
 from apps.exceptions import VALIDATION_ERROR_RESPONSES, exception_handlers
 from apps.i18n.middleware import I18nMiddleware
+from apps.middlewares import TimezoneMiddleware
 from containers import Container
 from settings import Settings
 
@@ -74,6 +75,7 @@ app.openapi = openapi
 app.add_middleware(SessionMiddleware, secret_key=Settings.secret_key)
 app.add_middleware(AuthenticationMiddleware, backend=container.auth_backend())
 app.add_middleware(I18nMiddleware)
+app.add_middleware(TimezoneMiddleware)
 
 exception_handlers(app)
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)

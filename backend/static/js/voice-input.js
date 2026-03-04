@@ -150,7 +150,6 @@ function connectWebSocket() {
                 // Display final transcript from server
                 if (data.transcript) {
                     textArea.value = data.transcript;
-                    btnSubmit.disabled = !data.transcript.trim();
                 }
 
                 // Now safe to close WebSocket
@@ -178,7 +177,6 @@ function connectWebSocket() {
             // Handle STT result - only show final results
             if (data.text !== undefined && data.is_final) {
                 textArea.value = data.text;
-                btnSubmit.disabled = !data.text.trim();
             }
         } catch (e) {
             console.error('Failed to parse WebSocket message:', e);
@@ -203,7 +201,6 @@ function connectWebSocket() {
 async function startRecording() {
     // Clear previous text
     textArea.value = '';
-    btnSubmit.disabled = true;
 
     try {
         // Request microphone access
@@ -344,7 +341,10 @@ btnCancel.addEventListener('click', () => {
 
 btnSubmit.addEventListener('click', () => {
     const text = textArea.value.trim();
-    if (!text) return;
+    if (!text) {
+        showError('텍스트를 입력하거나 음성을 녹음해 주세요');
+        return;
+    }
 
     stopRecording();
 
@@ -375,7 +375,6 @@ popup.addEventListener('click', (e) => {
 function openPopup() {
     overlay.classList.add('active');
     textArea.value = '';
-    btnSubmit.disabled = true;
     sessionId = null;
 }
 
@@ -386,7 +385,6 @@ function closePopup() {
 
 function setText(text) {
     textArea.value = text;
-    btnSubmit.disabled = !text.trim();
 }
 
 // Expose functions globally for React Native

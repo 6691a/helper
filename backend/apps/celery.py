@@ -30,5 +30,10 @@ celery_app.conf.update(
     result_serializer=_celery.result_serializer,
     accept_content=_celery.accept_content,
     result_expires=_celery.result_expires,
-    beat_schedule={},
+    beat_schedule={
+        "process-due-reminders": {
+            "task": "apps.tasks.reminder.process_due_reminders",
+            "schedule": 60.0,  # 60초마다
+        },
+    },
 )

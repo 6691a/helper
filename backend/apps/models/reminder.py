@@ -2,7 +2,9 @@ from datetime import date, datetime
 from datetime import time as _time
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Column, DateTime, ForeignKey, Integer
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, String
+from sqlalchemy import Time as SATime
+from sqlalchemy.dialects.postgresql import ARRAY
 from sqlmodel import Field, Relationship
 
 from apps.models import Memory
@@ -31,8 +33,11 @@ class Reminder(BaseModel, table=True):
     # 반복 주기
     frequency: ReminderFrequency = Field(nullable=False)
 
-    # 요일 (frequency=weekly일 때)
-    weekday: Weekday | None = Field(default=None)
+    # 요일 목록 (frequency=weekly일 때, 복수 선택 가능)
+    weekdays: list[Weekday] = Field(
+        sa_column=Column(ARRAY(String()), nullable=False, server_default="{}"),
+        default_factory=list,
+    )
 
     # 매월 몇 일 (frequency=monthly일 때)
     day_of_month: int | None = Field(default=None, ge=1, le=31)
@@ -41,7 +46,10 @@ class Reminder(BaseModel, table=True):
     specific_date: date | None = Field(default=None)
 
     # 알림 시간
-    time: _time = Field(default=_time(9, 0), nullable=False)
+    time: _time = Field(
+        sa_column=Column(SATime(), nullable=False),
+        default=_time(9, 0),
+    )
 
     # 다음 실행 시각 (Celery Beat 스케줄링용)
     next_run_at: datetime | None = Field(  # type: ignore[call-overload]

@@ -4,6 +4,7 @@ from apps.auth import SessionAuthBackend
 from apps.cache import RedisCache
 from apps.repositories.ai_log import AIProcessingLogRepository
 from apps.repositories.conversation import ConversationRepository
+from apps.repositories.device_token import DeviceTokenRepository
 from apps.repositories.memory import MemoryRepository
 from apps.repositories.reminder import ReminderRepository
 from apps.repositories.user import UserRepository
@@ -11,6 +12,7 @@ from apps.repositories.voice import VoiceSessionRepository
 from apps.services.assistant import AssistantService
 from apps.services.auth import AuthService
 from apps.services.conversation import ConversationService
+from apps.services.push import PushService
 from apps.services.reminder import ReminderService
 from apps.services.session import SessionService
 from apps.services.social import SocialAuthService
@@ -101,6 +103,16 @@ class Container(containers.DeclarativeContainer):
     reminder_repository = providers.Factory(
         ReminderRepository,
         database=database,
+    )
+
+    device_token_repository = providers.Factory(
+        DeviceTokenRepository,
+        database=database,
+    )
+
+    push_service = providers.Singleton(
+        PushService,
+        credentials_path=config.firebase.credentials_path,
     )
 
     streaming_voice_service = providers.Singleton(

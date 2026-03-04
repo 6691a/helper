@@ -1,5 +1,6 @@
 from .ai_log import AIProcessingLog
 from .conversation import Conversation
+from .device_token import DeviceToken
 from .links import ConversationMemoryLink, ConversationReminderLink
 from .memory import Memory
 from .reminder import Reminder
@@ -11,6 +12,7 @@ __all__ = [
     "Conversation",
     "ConversationMemoryLink",
     "ConversationReminderLink",
+    "DeviceToken",
     "Memory",
     "Reminder",
     "User",

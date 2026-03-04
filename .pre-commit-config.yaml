@@ -5,7 +5,7 @@ default_language_version:
   python: python3.13
 
 ci:
-  skip: [mypy, eslint-frontend]
+  skip: [mypy, dart-analyze]
 
 repos:
   # ============================================
@@ -56,20 +56,20 @@ repos:
         pass_filenames: false
 
   # ============================================
-  # Frontend (TypeScript/React Native) - frontend/ 디렉토리만 적용
+  # Flutter (Dart) - flutter/ 디렉토리만 적용
   # ============================================
   - repo: local
     hooks:
-      - id: eslint-frontend
-        name: eslint (frontend)
-        entry: bash -c 'cd frontend && npm run lint -- --fix'
+      - id: dart-format
+        name: dart format (flutter)
+        entry: bash -c 'cd flutter && dart format lib test'
         language: system
-        files: ^frontend/.*\.(js|jsx|ts|tsx)$
+        files: ^flutter/.*\.dart$
         pass_filenames: false
 
-      - id: prettier-frontend
-        name: prettier (frontend)
-        entry: bash -c 'cd frontend && npx prettier --write "**/*.{js,jsx,ts,tsx,json,css,md}"'
+      - id: dart-analyze
+        name: dart analyze (flutter)
+        entry: bash -c 'cd flutter && dart analyze'
         language: system
-        files: ^frontend/.*\.(js|jsx|ts|tsx|json|css|md)$
+        files: ^flutter/.*\.dart$
         pass_filenames: false

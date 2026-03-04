@@ -14,7 +14,7 @@ from apps.schemas.conversation import ConversationResponse, ProcessVoiceRequest
 from apps.schemas.memory import MemoryResponse
 from apps.services.assistant import AssistantService
 from apps.services.conversation import ConversationService
-from apps.utils.datetime_utils import format_datetime_for_timezone
+from apps.utils.datetime_utils import TimezoneConverter, format_datetime_for_timezone
 from containers import Container
 
 router = APIRouter(
@@ -41,8 +41,8 @@ async def chat(
     - 질문: "~어디 있어?", "~어떻게 가?" 등
     """
     user_id = request.user.user.id
-    result = await assistant_service.process(text=body.text, user_id=user_id)
-    return ResponseProvider.success(result)
+    result = await assistant_service.process(text=body.text, user_id=user_id, timezone=request.state.timezone)
+    return ResponseProvider.success(TimezoneConverter.model_dump(result, request.state.timezone))
 
 
 @router.post(
@@ -68,7 +68,7 @@ async def voice(
     - Memory/Reminder 생성 및 Conversation 기록
     """
     user_id = request.user.user.id
-    result = await conversation_service.process_voice(request=body, user_id=user_id)
+    result = await conversation_service.process_voice(request=body, user_id=user_id, timezone=request.state.timezone)
     return ResponseProvider.success(result)
 
 
@@ -83,21 +83,26 @@ async def get_memories(
     ],
     limit: int = 10,
     offset: int = 0,
+    date: str | None = None,
 ) -> JSONResponse:
     """
     사용자의 메모리 목록을 조회합니다.
 
-    - 최신순으로 정렬
-    - limit: 가져올 개수 (기본 10개)
-    - offset: 건너뛸 개수 (페이징용)
+    - date 없음: 최신순 paginated list (limit, offset 사용)
+    - date 있음: 해당 날짜의 메모리 목록 (YYYY-MM-DD)
     - X-Timezone 헤더로 시간대 지정 가능
     """
     user_id = request.user.user.id
-    timezone = request.headers.get("X-Timezone", "UTC")
+    timezone = request.state.timezone
 
-    memories = await memory_repository.get_all(user_id=user_id, limit=limit, offset=offset)
+    if date is not None:
+        target_date = date_from_str(date)
+        if target_date is None:
+            return ResponseProvider.failed(status_code=400, message="날짜 형식이 올바르지 않습니다 (YYYY-MM-DD)")
+        memories = await memory_repository.get_by_date(target_date=target_date, user_id=user_id, timezone=timezone)
+    else:
+        memories = await memory_repository.get_all(user_id=user_id, limit=limit, offset=offset)
 
-    # Memory 객체를 dict로 변환하며 datetime을 사용자 시간대로 포맷팅
     response_data = [
         {
             "id": m.id,
@@ -115,7 +120,7 @@ async def get_memories(
     return ResponseProvider.success(response_data)
 
 
-@router.get("/memories/calendar-marks", response_model=Response[dict[str, int]], status_code=status.HTTP_200_OK)
+@router.get("/memories/calendar", response_model=Response[dict[str, int]], status_code=status.HTTP_200_OK)
 @requires("authenticated")
 @inject
 async def get_calendar_marks(
@@ -132,53 +137,9 @@ async def get_calendar_marks(
     - X-Timezone 헤더로 시간대 지정 가능
     """
     user_id = request.user.user.id
-    timezone = request.headers.get("X-Timezone", "UTC")
 
-    marks = await memory_repository.get_calendar_marks(user_id=user_id, timezone=timezone)
+    marks = await memory_repository.get_calendar_marks(user_id=user_id, timezone=request.state.timezone)
     return ResponseProvider.success(marks)
-
-
-@router.get("/memories/by-date", response_model=Response[list[MemoryResponse]], status_code=status.HTTP_200_OK)
-@requires("authenticated")
-@inject
-async def get_memories_by_date(
-    request: Request,
-    memory_repository: Annotated[
-        MemoryRepository,
-        Depends(Provide[Container.memory_repository]),
-    ],
-    date: str,
-) -> JSONResponse:
-    """
-    특정 날짜의 메모리 목록을 조회합니다.
-
-    - date: YYYY-MM-DD 형식
-    - X-Timezone 헤더로 시간대 지정 가능
-    """
-    user_id = request.user.user.id
-    timezone = request.headers.get("X-Timezone", "UTC")
-
-    target_date = date_from_str(date)
-    if target_date is None:
-        return ResponseProvider.failed(status_code=400, message="날짜 형식이 올바르지 않습니다 (YYYY-MM-DD)")
-
-    memories = await memory_repository.get_by_date(target_date=target_date, user_id=user_id, timezone=timezone)
-
-    response_data = [
-        {
-            "id": m.id,
-            "type": m.type,
-            "keywords": m.keywords,
-            "content": m.content,
-            "metadata_": m.metadata_,
-            "original_text": m.original_text,
-            "created_at": format_datetime_for_timezone(m.created_at, timezone),
-            "updated_at": format_datetime_for_timezone(m.updated_at, timezone),
-        }
-        for m in memories
-    ]
-
-    return ResponseProvider.success(response_data)
 
 
 def date_from_str(date_str: str) -> date | None:

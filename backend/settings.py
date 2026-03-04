@@ -12,6 +12,7 @@ from apps.types.assistant import AssistantConfig
 from apps.types.auth import AuthConfig
 from apps.types.celery import CeleryConfig
 from apps.types.database import DatabaseConfig
+from apps.types.firebase import FirebaseConfig
 from apps.types.redis import RedisConfig
 from apps.types.social import SocialConfig
 from apps.types.voice import VoiceConfig
@@ -31,6 +32,7 @@ class _Settings(BaseSettings):
     voice: VoiceConfig
     assistant: AssistantConfig
     celery: CeleryConfig
+    firebase: FirebaseConfig = FirebaseConfig()
 
     model_config = SettingsConfigDict(
         case_sensitive=False,

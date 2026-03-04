@@ -146,6 +146,8 @@ html, body {
     resize: none;
     outline: none;
     transition: border-color 0.2s ease;
+    -webkit-user-select: text !important;
+    user-select: text !important;
 }
 
 .text-area:focus {

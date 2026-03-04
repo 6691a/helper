@@ -65,9 +65,9 @@ class ReminderInfo(BaseModel):
     """알림 정보 (with_structured_output용)"""
 
     frequency: ReminderFrequency = Field(description="알림 반복 주기")
-    weekday: Weekday | None = Field(
-        default=None,
-        description="요일 (frequency=weekly일 때 필수)",
+    weekdays: list[Weekday] = Field(
+        default_factory=list,
+        description="요일 목록 (frequency=weekly일 때 필수, 복수 선택 가능)",
     )
     day_of_month: int | None = Field(
         default=None,
@@ -79,9 +79,9 @@ class ReminderInfo(BaseModel):
         default=None,
         description="특정 일자 (frequency=once일 때 필수)",
     )
-    time: _time | None = Field(
-        default=None,
-        description="알림 시간",
+    time: _time = Field(
+        default=_time(9, 0),
+        description="알림 시간 (예: 09:00)",
     )
 
 

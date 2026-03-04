@@ -1,5 +1,6 @@
 from datetime import UTC, date, datetime, timedelta
 from datetime import time as _time
+from zoneinfo import ZoneInfo
 
 from apps.types.assistant import ReminderFrequency, Weekday
 
@@ -8,12 +9,43 @@ class ReminderCalculator:
     """알림 실행 시간 계산 유틸리티"""
 
     @staticmethod
+    def calculate_next_run(
+        frequency: ReminderFrequency,
+        time: _time,
+        weekdays: list[Weekday] | None = None,
+        day_of_month: int | None = None,
+        specific_date: date | None = None,
+        timezone: str = "Asia/Seoul",
+    ) -> datetime | None:
+        """다음 실행 시간을 계산합니다. 복수 요일인 경우 가장 가까운 시각을 반환합니다."""
+        tz = ZoneInfo(timezone)
+        now = datetime.now(tz)
+
+        if frequency == ReminderFrequency.WEEKLY:
+            candidates: list[datetime] = []
+            for wd in weekdays or []:
+                result = ReminderCalculator._calculate_weekly(wd, time, now, tz)
+                if result:
+                    candidates.append(result)
+            return min(candidates) if candidates else None
+
+        return ReminderCalculator.calculate_next_run_at(
+            frequency=frequency,
+            reminder_time=time,
+            weekday=None,
+            day_of_month=day_of_month,
+            specific_date=specific_date,
+            timezone=timezone,
+        )
+
+    @staticmethod
     def calculate_next_run_at(
         frequency: ReminderFrequency,
         reminder_time: _time,
         weekday: Weekday | None = None,
         day_of_month: int | None = None,
         specific_date: date | None = None,
+        timezone: str = "Asia/Seoul",
     ) -> datetime | None:
         """
         다음 실행 시간을 계산합니다.
@@ -24,20 +56,22 @@ class ReminderCalculator:
             weekday: 요일 (주간 알림용)
             day_of_month: 월의 날짜 (월간 알림용)
             specific_date: 특정 날짜 (1회성 알림용)
+            timezone: 사용자 타임존 (기본: Asia/Seoul)
 
         Returns:
-            다음 실행 시간 또는 None
+            다음 실행 시간 (UTC) 또는 None
         """
-        now = datetime.now(UTC)
+        tz = ZoneInfo(timezone)
+        now = datetime.now(tz)
 
         if frequency == ReminderFrequency.ONCE:
-            return ReminderCalculator._calculate_once(specific_date, reminder_time, now)
+            return ReminderCalculator._calculate_once(specific_date, reminder_time, now, tz)
         elif frequency == ReminderFrequency.DAILY:
-            return ReminderCalculator._calculate_daily(reminder_time, now)
+            return ReminderCalculator._calculate_daily(reminder_time, now, tz)
         elif frequency == ReminderFrequency.WEEKLY:
-            return ReminderCalculator._calculate_weekly(weekday, reminder_time, now)
+            return ReminderCalculator._calculate_weekly(weekday, reminder_time, now, tz)
         elif frequency == ReminderFrequency.MONTHLY:
-            return ReminderCalculator._calculate_monthly(day_of_month, reminder_time, now)
+            return ReminderCalculator._calculate_monthly(day_of_month, reminder_time, now, tz)
         return None
 
     @staticmethod
@@ -45,17 +79,18 @@ class ReminderCalculator:
         specific_date: date | None,
         reminder_time: _time,
         now: datetime,
+        tz: ZoneInfo,
     ) -> datetime | None:
         """1회성 알림의 다음 실행 시간을 계산합니다."""
         if not specific_date:
             return None
-        next_dt = datetime.combine(specific_date, reminder_time, tzinfo=UTC)
+        next_dt = datetime.combine(specific_date, reminder_time, tzinfo=tz).astimezone(UTC)
         return next_dt if next_dt > now else None
 
     @staticmethod
-    def _calculate_daily(reminder_time: _time, now: datetime) -> datetime:
+    def _calculate_daily(reminder_time: _time, now: datetime, tz: ZoneInfo) -> datetime:
         """매일 알림의 다음 실행 시간을 계산합니다."""
-        today_run = datetime.combine(now.date(), reminder_time, tzinfo=UTC)
+        today_run = datetime.combine(now.date(), reminder_time, tzinfo=tz).astimezone(UTC)
         if today_run > now:
             return today_run
         return today_run + timedelta(days=1)
@@ -65,6 +100,7 @@ class ReminderCalculator:
         weekday: Weekday | None,
         reminder_time: _time,
         now: datetime,
+        tz: ZoneInfo,
     ) -> datetime | None:
         """매주 알림의 다음 실행 시간을 계산합니다."""
         if not weekday:
@@ -82,7 +118,7 @@ class ReminderCalculator:
         target_weekday = weekday_map[weekday]
         days_until = (target_weekday - now.weekday()) % 7
         next_date = now.date() + timedelta(days=days_until)
-        next_dt = datetime.combine(next_date, reminder_time, tzinfo=UTC)
+        next_dt = datetime.combine(next_date, reminder_time, tzinfo=tz).astimezone(UTC)
 
         if next_dt <= now:
             next_dt += timedelta(days=7)
@@ -93,6 +129,7 @@ class ReminderCalculator:
         day_of_month: int | None,
         reminder_time: _time,
         now: datetime,
+        tz: ZoneInfo,
     ) -> datetime | None:
         """매월 알림의 다음 실행 시간을 계산합니다."""
         if not day_of_month:
@@ -101,7 +138,7 @@ class ReminderCalculator:
         # 이번 달 시도
         try:
             next_date = now.date().replace(day=day_of_month)
-            next_dt = datetime.combine(next_date, reminder_time, tzinfo=UTC)
+            next_dt = datetime.combine(next_date, reminder_time, tzinfo=tz).astimezone(UTC)
             if next_dt > now:
                 return next_dt
         except ValueError:
@@ -115,6 +152,6 @@ class ReminderCalculator:
 
         try:
             next_date = next_month.date().replace(day=day_of_month)
-            return datetime.combine(next_date, reminder_time, tzinfo=UTC)
+            return datetime.combine(next_date, reminder_time, tzinfo=tz).astimezone(UTC)
         except ValueError:
             return None

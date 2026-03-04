@@ -11,7 +11,7 @@ Helper - 가정용 물품 관리 및 AI 음성 비서 애플리케이션 (모노
 ```
 helper/
 ├── backend/     # FastAPI + SQLModel API 서버
-└── frontend/    # Expo React Native 앱 (file-based routing)
+└── flutter/     # Flutter 네이티브 앱 (Flutter 3.41.2, Dart 3.11.0)
 ```
 
 ## Development Commands
@@ -44,16 +44,22 @@ uv run ruff check --fix .
 uv run mypy .
 ```
 
-### Frontend (Expo/React Native)
+### Flutter
 
 ```bash
-cd frontend
+cd flutter
 
-npm install                      # Install dependencies
-npx expo start                   # Start Expo dev server
-npm run ios                      # iOS simulator
-npm run android                  # Android emulator
-npm run lint                     # ESLint
+just pub           # flutter pub get
+just gen           # dart run build_runner build --delete-conflicting-outputs
+just run           # flutter run
+just ios           # flutter run -d "iPhone" 시뮬레이터
+just android       # flutter run -d android
+just build-ios     # flutter build ios --debug --no-codesign
+just build-apk     # flutter build apk --debug
+just analyze       # dart analyze
+just test          # flutter test
+just clean         # flutter clean && flutter pub get
+just logs          # flutter logs (연결된 기기)
 ```
 
 ## Architecture
@@ -68,22 +74,16 @@ npm run lint                     # ESLint
 
 상세 가이드라인은 `backend/.claude/CLAUDE.md` 참조.
 
-### Frontend
+### Flutter
 
-- **Stack:** Expo SDK 54, React Native 0.81, React 19, TypeScript
-- **Routing:** expo-router (file-based routing)
-- **Navigation:** @react-navigation/bottom-tabs
+- **Stack:** Flutter 3.41.2, Dart 3.11.0
+- **상태 관리:** flutter_riverpod + riverpod_generator
+- **라우팅:** go_router (auth redirect guard)
+- **HTTP:** Dio + 인터셉터 (Bearer 토큰, X-Timezone, result unwrap, 401 logout)
+- **음성:** record (PCM 16-bit 스트리밍) + web_socket_channel
+- **OAuth:** flutter_web_auth_2 (백엔드 Google OAuth 엔드포인트 활용)
 
-```
-frontend/
-├── app/                 # File-based routes (expo-router)
-│   ├── (tabs)/          # Tab navigator screens
-│   └── _layout.tsx      # Root layout
-├── components/          # Reusable components
-│   └── ui/              # UI primitives
-├── constants/           # Theme, colors, fonts
-└── hooks/               # Custom hooks
-```
+상세 가이드라인은 `flutter/.claude/CLAUDE.md` 참조.
 
 ## Local Services
 
@@ -95,7 +95,7 @@ frontend/
 ## Key Conventions
 
 - **Backend:** Enum 사용, 단수형 테이블명, mypy strict 모드
-- **Frontend:** Path aliases (`@/components`, `@/hooks` 등)
+- **Flutter:** `AppColors` 상수 직접 사용, `AppTheme.light()`/`dark()`로 ThemeData 생성, riverpod_generator 사용 시 `just gen` 필수
 
 ## Git & Commit Convention
 
@@ -131,7 +131,7 @@ type(scope): message
 - `CI` - CI 설정 변경
 - `Chore` - 기타 변경
 
-**Scope (선택):** `frontend`, `backend`
+**Scope (선택):** `frontend`, `backend`, `flutter`
 
 **예시:**
 ```bash
@@ -145,7 +145,7 @@ git commit -m "Docs: update README"
 커밋 시 자동으로 실행되는 검사:
 - **공통:** trailing whitespace, YAML/JSON 검증, 대용량 파일 검사
 - **Backend:** ruff (lint + format), mypy
-- **Frontend:** ESLint, Prettier
+- **Flutter:** dart analyze
 
 ## Claude Code 지침
 

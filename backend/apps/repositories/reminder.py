@@ -1,7 +1,8 @@
 from datetime import UTC, datetime
 
 from sqlalchemy import and_
-from sqlmodel import col, desc, select
+from sqlalchemy.orm import selectinload
+from sqlmodel import col, select
 
 from apps.models.reminder import Reminder
 from apps.types.reminder import ReminderStatus
@@ -40,16 +41,35 @@ class ReminderRepository:
                 stmt = stmt.where(Reminder.status == status)
             if memory_id is not None:
                 stmt = stmt.where(Reminder.memory_id == memory_id)
-            stmt = stmt.order_by(desc(col(Reminder.created_at))).limit(limit).offset(offset)
+            stmt = stmt.order_by(col(Reminder.next_run_at).asc().nullslast()).limit(limit).offset(offset)
+            result = await session.execute(stmt)
+            return list(result.scalars().all())
+
+    async def get_all_with_memory(
+        self,
+        user_id: int | None = None,
+        status: ReminderStatus | None = None,
+        limit: int = 100,
+        offset: int = 0,
+    ) -> list[Reminder]:
+        """메모리 정보를 포함하여 Reminder 목록을 조회합니다."""
+        async with self.database.session() as session:
+            stmt = select(Reminder).options(selectinload(Reminder.memory))  # type: ignore[arg-type]
+            if user_id is not None:
+                stmt = stmt.where(Reminder.user_id == user_id)
+            if status is not None:
+                stmt = stmt.where(Reminder.status == status)
+            stmt = stmt.order_by(col(Reminder.next_run_at).asc().nullslast()).limit(limit).offset(offset)
             result = await session.execute(stmt)
             return list(result.scalars().all())
 
     async def get_due_reminders(self, limit: int = 100) -> list[Reminder]:
-        """실행 시간이 된 활성 리마인더를 조회합니다."""
+        """실행 시간이 된 활성 리마인더를 memory와 함께 조회합니다."""
         async with self.database.session() as session:
             now = datetime.now(UTC)
             stmt = (
                 select(Reminder)
+                .options(selectinload(Reminder.memory))  # type: ignore[arg-type]
                 .where(
                     and_(
                         col(Reminder.next_run_at) <= now,

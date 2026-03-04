@@ -1,0 +1,46 @@
+# Flutter Justfile
+# Usage: just <command>
+
+# 의존성 설치
+pub:
+    flutter pub get
+
+# 코드 생성 (Riverpod 등)
+gen:
+    dart run build_runner build --delete-conflicting-outputs
+
+# 기기/에뮬레이터 실행 (대화형 선택)
+run:
+    flutter run
+
+# iOS 시뮬레이터 실행
+ios:
+    flutter run -d iPhone
+
+# Android 에뮬레이터 실행
+android:
+    flutter run -d android
+
+# iOS Debug 빌드 (코드사인 없이)
+build-ios:
+    flutter build ios --debug --no-codesign
+
+# Android Debug APK 빌드
+build-apk:
+    flutter build apk --debug
+
+# 정적 분석
+analyze:
+    dart analyze
+
+# 테스트 실행
+test:
+    flutter test
+
+# 클린 후 의존성 재설치
+clean:
+    flutter clean && flutter pub get
+
+# 연결된 기기 로그 스트리밍
+logs:
+    flutter logs

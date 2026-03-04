@@ -52,16 +52,16 @@ class ReminderService:
         reminder = Reminder(
             memory_id=data.memory_id,
             frequency=data.frequency,
-            weekday=data.weekday,
+            weekdays=data.weekdays,
             day_of_month=data.day_of_month,
             specific_date=data.specific_date,
             time=data.time,
             user_id=user_id,
         )
-        reminder.next_run_at = ReminderCalculator.calculate_next_run_at(
+        reminder.next_run_at = ReminderCalculator.calculate_next_run(
             frequency=data.frequency,
-            reminder_time=data.time,
-            weekday=data.weekday,
+            time=data.time,
+            weekdays=data.weekdays,
             day_of_month=data.day_of_month,
             specific_date=data.specific_date,
         )
@@ -80,11 +80,10 @@ class ReminderService:
         for key, value in update_data.items():
             setattr(reminder, key, value)
 
-        # next_run_at 재계산
-        reminder.next_run_at = ReminderCalculator.calculate_next_run_at(
+        reminder.next_run_at = ReminderCalculator.calculate_next_run(
             frequency=reminder.frequency,
-            reminder_time=reminder.time,
-            weekday=reminder.weekday,
+            time=reminder.time,
+            weekdays=reminder.weekdays,
             day_of_month=reminder.day_of_month,
             specific_date=reminder.specific_date,
         )
@@ -115,10 +114,10 @@ class ReminderService:
             raise NotFoundError(_("Reminder not found."))
 
         reminder.status = ReminderStatus.ACTIVE
-        reminder.next_run_at = ReminderCalculator.calculate_next_run_at(
+        reminder.next_run_at = ReminderCalculator.calculate_next_run(
             frequency=reminder.frequency,
-            reminder_time=reminder.time,
-            weekday=reminder.weekday,
+            time=reminder.time,
+            weekdays=reminder.weekdays,
             day_of_month=reminder.day_of_month,
             specific_date=reminder.specific_date,
         )

@@ -31,13 +31,15 @@ class ConversationService:
         self.assistant_service = assistant_service
 
     @transactional
-    async def process_voice(self, request: ProcessVoiceRequest, user_id: int) -> ConversationResponse:
+    async def process_voice(
+        self, request: ProcessVoiceRequest, user_id: int, timezone: str = "Asia/Seoul"
+    ) -> ConversationResponse:
         """음성 세션을 처리하여 대화 기록을 생성합니다. (트랜잭션 적용)"""
         voice_session = await self._get_voice_session(request.session_id, user_id)
         final_text = self._determine_final_text(request.text, voice_session)
         await self._update_voice_session_confirmation(voice_session, final_text)
 
-        assistant_response = await self.assistant_service.process(final_text, user_id)
+        assistant_response = await self.assistant_service.process(final_text, user_id, timezone)
         extracted = self._extract_result_data(assistant_response)
 
         voice_session_id = voice_session.id
